@@ -22,7 +22,7 @@ const router = createRouter({
     {
       path: '/blog',
       name: 'blog',
-      component: 'Blog',
+      component: Blog,
     },
     {
       path: '/post',
@@ -32,12 +32,12 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: 'login',
+      component: login,
     },
     {
       path: '/signup',
       name: 'signup',
-      component: 'Signup'
+      component: Signup,
     },
   ],
 })
