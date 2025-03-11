@@ -51,7 +51,7 @@
 
 <script>
 export default {
-  name: "Footer",
+  name: 'Foot',
   data() {
     return {
       currentYear: new Date().getFullYear(),

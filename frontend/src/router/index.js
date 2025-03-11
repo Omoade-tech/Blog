@@ -5,6 +5,8 @@ import Blog from '@/views/Blog.vue'
 import Post from '@/views/Post.vue'
 import login from '@/views/login.vue'
 import Signup from '@/views/Signup.vue'
+import DashBoard from '@/views/DashBoard.vue'
+import AdminDashBoard from '@/views/AdminDashBoard.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -39,6 +41,17 @@ const router = createRouter({
       name: 'signup',
       component: Signup,
     },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: DashBoard,
+
+    },
+    {
+      path: '/admindashboard',
+      name: 'admindashboard',
+      component: AdminDashBoard,
+    }
   ],
 })
 

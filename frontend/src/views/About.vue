@@ -3,14 +3,14 @@
         <div class="hero-section row g-0 align-items-center mb-5">
             <div class="col-md-6 order-md-2">
                 <img 
-                    src="../assets/image/image3-removebg-preview.png" 
+                    src="../assets/image/wmremove-transformed-removebg-preview.png" 
                     alt="About Us Hero Image" 
                     class="img-fluid rounded shadow-lg"
                 >
             </div>
             <div class="col-md-6 order-md-1 px-4 py-5">
-                <h1 class="display-4 text-light mb-3">About Our Blog</h1>
-                <p class="text-light">
+                <h1 class="display-2 text-light mb-3">About Our Blog</h1>
+                <p class=" story">
                     Discover the story behind our passion for sharing knowledge
                 </p>
             </div>
@@ -43,7 +43,7 @@
                 <div class="col-12 col-md-6 mb-4">
                     <div class="card h-100 d-flex flex-column flex-md-row">
                         <img 
-                            src="../assets/image/imag2-removebg-preview (1).png" 
+                            src="../assets/image/image3-removebg-preview.png" 
                             alt="Our Mission" 
                             class="img-fluid mx-auto d-block"
                             style="width: 150px; height: 150px; object-fit: contain;"
@@ -72,7 +72,7 @@
             <div class="set-goals-section row g-0 align-items-center mb-5 bg-light">
                 <div class="col-md-6 order-md-1 p-0">
                     <img 
-                        src="../assets/image/wmremove-transformed-removebg-preview.png" 
+                        src="../assets/image/rmimage1.png" 
                         alt="Our Set Goals" 
                         class="img-fluid w-100 h-100 object-fit-cover"
                     >
@@ -130,7 +130,7 @@ export default {
 
 <style scoped>
 .hero-section {
-    background-image: url('../assets/image/bg2.jpg');
+    background-image: url('../assets/image/aboutbg.jpeg');
     background-repeat: no-repeat;
     background-size: cover;
 }
@@ -141,6 +141,15 @@ export default {
 
 .card:hover {
     transform: translateY(-10px);
+}
+.story{
+
+    color: #ddd;
+    /* font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; */
+    font-weight: 900;
+     text-shadow: 5px 5px 5px #000000;
+     width: 80%;
+     margin-top: -15px;
 }
 
 @media (max-width: 767px) {

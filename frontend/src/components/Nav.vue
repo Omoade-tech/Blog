@@ -63,29 +63,29 @@
   import { computed } from 'vue';
   
   export default {
-    name: 'NavBar',
-    setup() {
-      const authStore = useAuthStore();
-      const router = useRouter();
+    name: "Nav",
+    // setup() {
+    //   const authStore = useAuthStore();
+    //   const router = useRouter();
   
-      const isAuthenticated = computed(() => authStore.isAuthenticated);
-      const user = computed(() => authStore.user);
+    //   const isAuthenticated = computed(() => authStore.isAuthenticated);
+    //   const user = computed(() => authStore.user);
   
-      const handleLogout = async () => {
-        try {
-          await authStore.logout();
-          router.push('/');
-        } catch (error) {
-          console.error('Logout error:', error);
-        }
-      };
+    //   const handleLogout = async () => {
+    //     try {
+    //       await authStore.logout();
+    //       router.push('/');
+    //     } catch (error) {
+    //       console.error('Logout error:', error);
+    //     }
+    //   };
   
-      return {
-        isAuthenticated,
-        user,
-        handleLogout
-      };
-    }
+    //   return {
+    //     isAuthenticated,
+    //     user,
+    //     handleLogout
+    //   };
+    // }
   };
   </script>
   
