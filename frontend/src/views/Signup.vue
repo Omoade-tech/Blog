@@ -94,8 +94,13 @@
 
 <script>
 import { useAuthStore } from '@/stores/Auth.js';
+import { useToast } from "vue-toastification";
 
 export default {
+  setup() {
+      const toast = useToast();
+      return { toast }
+    },
   data() {
     return {
       name: '',
@@ -105,7 +110,7 @@ export default {
       role: '',
       submitted: false,
       isLoading: false,
-      errorMessage: ''
+      errorMessage: '',
     };
   },
   computed: {
@@ -141,7 +146,12 @@ export default {
         
         const authStore = useAuthStore();
         await authStore.register(formData);
-        
+
+
+        this.toast.success('You have successfully registered for this Cruiz-blog.' ,{
+          timeout: 3000,
+          // position: 'center',
+        });
         // Success - redirect to login
         this.$router.push({
           path: '/login',
@@ -153,7 +163,8 @@ export default {
         
         if (error.response?.data?.message) {
           errorMsg = error.response.data.message;
-        } else if (error.response?.data?.errors) {
+        } else if (error.response?.data?.errors)
+         {
           // Laravel validation errors
           const errors = error.response.data.errors;
           const firstError = Object.values(errors)[0];
@@ -183,4 +194,5 @@ export default {
   max-width: 500px;
   width: 100%;
 }
+
 </style>

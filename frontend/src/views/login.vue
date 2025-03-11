@@ -27,7 +27,10 @@
               <input type="checkbox" v-model="rememberMe" id="rememberMe" />
               <label for="rememberMe">Remember Me</label>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">Login</button>
+            <button type="submit" class="btn btn-primary btn-block" :disabled="isLoading">
+              <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              {{ isLoading ? 'Logging in...' : 'Login' }}
+            </button>
           </form>
         </div>
       </div>
@@ -36,39 +39,57 @@
 </template>
 
 <script>
-import { mapActions } from 'pinia';
-import { useAuthStore } from '@/stores/Auth';
+import { useAuthStore } from '@/stores/Auth.js';
+import { useToast } from "vue-toastification";
 
 export default {
+  setup() {
+    const toast = useToast();
+    const authStore = useAuthStore();
+    return { toast, authStore }
+  },
+  
   data() {
     return {
       email: '',
       password: '',
       rememberMe: false,
       showPassword: false,
+      isLoading: false
     };
   },
-
-  computed: {
-
-  },
+  
   methods: {
-    ...mapActions(useAuthStore, ['login']),
-
     togglePasswordVisibility() {
       this.showPassword = !this.showPassword;
     },
 
     async handleLogin() {
-      const response = await this.login({ email: this.email, password: this.password });
-      if (response.success) {
-        if (response.user.role === 'admin') {
+      try {
+        this.isLoading = true;
+        
+        // Use the authStore from setup()
+        const response = await this.authStore.login({ 
+          email: this.email, 
+          password: this.password 
+        });
+        
+        this.toast.success('Login successful', {
+          timeout: 3000,
+        });
+        
+        if (response && response.user && response.user.role === 'admin') {
           this.$router.push('/admindashboard');
         } else {
           this.$router.push('/dashboard');
         }
-      } else {
-        alert('Login failed. Please check your credentials.');
+      } catch (error) {
+        console.error('Login error:', error);
+        this.toast.error(error.response?.data?.message || 'Login failed. Please check your credentials.', {
+          timeout: 5000,
+        });
+      } finally {
+        this.isLoading = false;
       }
     },
   },
@@ -122,5 +143,10 @@ export default {
 
 .remember-me {
   margin-bottom: 10px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 </style>
