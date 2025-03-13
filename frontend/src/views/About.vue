@@ -1,5 +1,5 @@
 <template>
-    <div class="about-page container px-0">
+    <div class="about-page container px-0 ">
         <div class="hero-section row g-0 align-items-center mb-5">
             <div class="col-md-6 order-md-2">
                 <img 

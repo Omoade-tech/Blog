@@ -76,7 +76,7 @@
               <div class="invalid-feedback" v-if="submitted && !role">Please select a role</div>
             </div>
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary btn-lg" :disabled="isLoading">
+              <button type="submit" class="btn btn-primary btn-sm p-2 w-50" :disabled="isLoading">
                 <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                 Sign Up
               </button>

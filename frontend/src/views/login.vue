@@ -74,7 +74,7 @@ export default {
           password: this.password 
         });
         
-        this.toast.success('Login successful', {
+        this.toast.success('Login successfully', {
           timeout: 3000,
         });
         
@@ -143,6 +143,7 @@ export default {
 
 .remember-me {
   margin-bottom: 10px;
+  
 }
 
 button:disabled {
