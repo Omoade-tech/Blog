@@ -71,7 +71,7 @@
       async fetchAllBlogs() {
         this.isLoading = true;
         try {
-          console.log('Fetching all blogs...');
+          // console.log('Fetching all blogs...');
           const response = await api.getAllBlogs();
           
           if (response.data && response.data.data) {

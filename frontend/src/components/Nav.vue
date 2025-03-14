@@ -37,17 +37,21 @@
           <template v-else>
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Welcome
                 {{ user?.name || 'Account' }}
               </a>
               <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                 <li v-if="user?.role === 'blogUser'">
-                  <router-link class="dropdown-item" :to="'/blogUserDashboard/' + user.id">Dashboard</router-link>
+                  <router-link class="dropdown-item" :to="'/dashboard/' + user.id">Dashboard</router-link>
                 </li>
                 <li v-if="user?.role === 'blogUser'">
-                  <router-link class="dropdown-item" to="/blogUserDashboard">Profile</router-link>
+                  <router-link class="dropdown-item" to="/profile">Profile</router-link>
                 </li>
                 <li v-if="user?.role === 'admin'">
                   <router-link class="dropdown-item" to="/AdminDashboard">Dashboard</router-link>
+                </li>
+                <li v-if="user?.role === 'admin'">
+                  <router-link class="dropdown-item" to="/profile">Profile</router-link>
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>

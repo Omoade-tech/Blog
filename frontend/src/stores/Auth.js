@@ -106,6 +106,79 @@ export const useAuthStore = defineStore('auth', {
       } catch (err) {
         console.error('Error during logout:', err);
       }
+    },
+
+    async fetchUserProfile() {
+      try {
+        // Check if authenticated but don't throw an error yet
+        if (!this.isAuthenticated) {
+          console.warn('fetchUserProfile called while not authenticated');
+          
+          // Try to re-initialize from localStorage
+          const storedToken = localStorage.getItem('token');
+          if (storedToken) {
+            this.token = storedToken;
+            this.isAuthenticated = true;
+          } else {
+            throw new Error('Not authenticated');
+          }
+        }
+        
+        // Make sure we have a token in the store
+        console.log('Fetching user profile with token:', this.token);
+        
+        // Call the correct API method
+        const response = await api.getUserProfile();
+        console.log('User profile response:', response);
+        
+        // Check if we got a valid response
+        if (!response.data) {
+          throw new Error('Invalid response from server');
+        }
+        
+        // Update user in local storage and store
+        // Handle nested response structure with 'status' and 'data' fields
+        let userData;
+        if (response.data.status === 'success' && response.data.data) {
+          // API returns {status: 'success', data: {...}}
+          userData = response.data.data;
+        } else {
+          // Fallback to other possible structures
+          userData = response.data.user || response.data;
+        }
+        
+        console.log('Extracted user data:', userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+        this.user = userData;
+
+        return userData;
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        // Only logout if it's an authentication error
+        if (error.response && error.response.status === 401) {
+          this.logout();
+        }
+        throw error;
+      }
+    },
+
+    async updateProfile(profileData) {
+      try {
+        if (!this.isAuthenticated) {
+          throw new Error('Not authenticated');
+        }
+
+        const response = await api.updateUserProfile(profileData);
+        
+        // Update user in local storage and store
+        const userData = response.data.user || response.data;
+        localStorage.setItem('user', JSON.stringify(userData));
+        this.user = userData;
+
+        return userData;
+      } catch (error) {
+        throw error;
+      }
     }
   }
 })
