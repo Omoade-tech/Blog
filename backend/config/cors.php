@@ -15,13 +15,13 @@ return [
     |
     */
 
-   'paths' => ['api/*', 'sanctum/csrf-cookie'], // Add 'sanctum/csrf-cookie' for Laravel Sanctum
-    'allowed_methods' => ['*'], // Allow all HTTP methods
-    'allowed_origins' => ['http://localhost:5173'], // Specify the frontend origin
+   'paths' => ['api/*', 'sanctum/csrf-cookie'], 
+    'allowed_methods' => ['*'], 
+    'allowed_origins' => ['http://localhost:5173'], 
     'allowed_origins_patterns' => [],
-    'allowed_headers' => ['*'], // Allow all headers
+    'allowed_headers' => ['*'], 
     'exposed_headers' => [],
     'max_age' => 0,
-    'supports_credentials' => true, // Enable credentials
+    'supports_credentials' => true, 
 
 ];

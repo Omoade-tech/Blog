@@ -18,11 +18,11 @@ class BlogController extends Controller
                 'status' => 'success',
                 'data' => $blogs
             ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Error fetching blog posts',
-                'error' => $e->getMessage()
+          } catch (\Exception $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Error fetching blog posts',
+                    'error' => $e->getMessage()
             ], 500);
         }
     }

@@ -18,6 +18,11 @@ class Blog extends Model
         'content',
       
     ];
+    protected $dates = [
+        'created_at',
+        'updated_at',
+    ];
+
 
     /**
      * Get the user that owns the blog post.

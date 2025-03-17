@@ -24,7 +24,7 @@ class ProfileController extends Controller
     {
         try {
             $user = Auth::user();
-            dd($user);
+            // dd($user);
            
             $validatedData = $request->validate([
                 'name' => 'required|string|max:255',
@@ -41,7 +41,7 @@ class ProfileController extends Controller
             ]);
 
 
-            dd($validatedData);
+            // dd($validatedData);
             
             // handle image upload if present
             if ($request->hasFile('image')) {
