@@ -220,27 +220,30 @@ export default {
         });
     },
 
-    updateUserProfile(profileData) {
-        // Make sure we have a token before making the request
-        ensureToken();
-        
-        // Use FormData to handle file uploads
-        const formData = new FormData();
-        
-        // Append all profile fields to FormData
-        Object.keys(profileData).forEach(key => {
-            // Special handling for image file
-            if (key === 'image' && profileData[key] instanceof File) {
-                formData.append('image', profileData[key]);
-            } else if (profileData[key] !== null && profileData[key] !== undefined) {
-                formData.append(key, profileData[key]);
-            }
-        });
+    // Modify the updateUserProfile function in your api.js file
 
-        return apiClient.post('/profile', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
-    }
+updateUserProfile(profileData) {
+  // Make sure we have a token before making the request
+  ensureToken();
+  
+  // Use FormData to handle file uploads
+  const formData = new FormData();
+  
+  // Append all profile fields to FormData
+  Object.keys(profileData).forEach(key => {
+      // Special handling for image file
+      if (key === 'image' && profileData[key] instanceof File) {
+          formData.append('image', profileData[key]);
+      } else if (profileData[key] !== null && profileData[key] !== undefined) {
+          formData.append(key, profileData[key]);
+      }
+  });
+  
+  
+  return apiClient.post('/profile/update', formData, {
+      headers: {
+          'Content-Type': 'multipart/form-data'
+      }
+  });
+}
 }
