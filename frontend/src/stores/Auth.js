@@ -167,14 +167,23 @@ export const useAuthStore = defineStore('auth', {
         if (!this.isAuthenticated) {
           throw new Error('Not authenticated');
         }
-
+    
         const response = await api.updateUserProfile(profileData);
         
-        // Update user in local storage and store
-        const userData = response.data.user || response.data;
+        // Parse the response data structure correctly
+        let userData;
+        if (response.data.status === 'success' && response.data.data) {
+          // API returns {status: 'success', data: {...}}
+          userData = response.data.data;
+        } else {
+          // Fallback to other possible structures
+          userData = response.data.user || response.data;
+        }
+        
+        console.log('Updated user data:', userData);
         localStorage.setItem('user', JSON.stringify(userData));
         this.user = userData;
-
+    
         return userData;
       } catch (error) {
         throw error;

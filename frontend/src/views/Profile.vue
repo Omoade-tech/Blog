@@ -216,7 +216,7 @@ export default {
           return;
         }
         
-        console.log('Fetching user profile with token:', token);
+        // console.log('Fetching user profile with token:', token);
         
         const authStore = useAuthStore();
         await authStore.fetchUserProfile();
