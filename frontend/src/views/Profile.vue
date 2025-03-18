@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+  <div class="container mb-3">
     <div class="row justify-content-center">
       <div class="col-md-8">
         <div class="card">
@@ -229,7 +229,7 @@ export default {
           this.initializeProfileForm();
         }
       } catch (error) {
-        console.error('Profile error:', error);
+        // console.error('Profile error:', error);
         this.error = error.message || 'Failed to load profile.';
         
         // Check if it's an authentication error
@@ -289,22 +289,17 @@ export default {
         await authStore.updateProfile(this.profileForm);
 
         this.toast.success('You have successfully Update your Profile for this Cruiz-blog.' ,{
-          timeout: 5000,
-          // position: 'center',
+          timeout: 3000,
+          
         });
         
         // Update local user data
-        this.user = authStore.user;
-      
-        this.$router.push({ name: 'profile' }); 
+        this.user = authStore.user; 
 
-      
-        
         // Close modal
         this.$refs.closeModalBtn.click();
         
-        // Show success message (you could add a toast notification here)
-        console.log('Profile updated successfully');
+
       } catch (error) {
         console.error('Profile update error:', error);
         this.updateError = error.message || 'Failed to update profile';

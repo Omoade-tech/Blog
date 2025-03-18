@@ -5,7 +5,8 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
     token: null,
-    isAuthenticated: false
+    isAuthenticated: false,
+    myBlogs: [] // Add this new state property
   }),
 
   getters: {
@@ -15,6 +16,11 @@ export const useAuthStore = defineStore('auth', {
     
     currentToken() {
       return this.token
+    },
+    
+    // Add a new getter for myBlogs
+    userBlogs() {
+      return this.myBlogs
     }
   },
 
@@ -99,6 +105,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = null;
       this.token = null;
       this.isAuthenticated = false;
+      this.myBlogs = []; // Clear blogs on logout
       
       // Call the API logout if needed (but don't wait for it)
       try {
@@ -186,6 +193,63 @@ export const useAuthStore = defineStore('auth', {
     
         return userData;
       } catch (error) {
+        throw error;
+      }
+    },
+
+    // Add new method for fetching user's blogs
+    async fetchMyBlogs() {
+      try {
+        if (!this.isAuthenticated) {
+          throw new Error('Not authenticated');
+        }
+        
+        console.log('Fetching user blogs');
+        const response = await api.getMyBlogs();
+        
+        // Parse the response
+        let blogs;
+        if (response.data.status === 'success' && response.data.data) {
+          blogs = response.data.data;
+        } else {
+          blogs = response.data;
+        }
+        
+        console.log('User blogs response:', blogs);
+        this.myBlogs = blogs;
+        return blogs;
+      } catch (error) {
+        console.error('Error fetching user blogs:', error.response?.data || error.message);
+        // Only logout if it's an authentication error
+        if (error.response && error.response.status === 401) {
+          this.logout();
+        }
+        throw error;
+      }
+    },
+
+    // Add new method for creating a blog post
+    async createBlog(blogData) {
+      try {
+        if (!this.isAuthenticated) {
+          throw new Error('Not authenticated');
+        }
+        
+        console.log('Creating blog with data:', blogData);
+        const response = await api.createBlog(blogData);
+        
+        // Parse the response
+        let blogResponse;
+        if (response.data.status === 'success' && response.data.data) {
+          blogResponse = response.data.data;
+        } else {
+          blogResponse = response.data;
+        }
+        
+        console.log('Blog creation response:', blogResponse);
+        return blogResponse;
+      } catch (error) {
+        console.error('Error creating blog:', error.response?.data || error.message);
         throw error;
       }
     }

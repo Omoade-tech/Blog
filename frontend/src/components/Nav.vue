@@ -42,7 +42,7 @@
               </a>
               <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                 <li v-if="user?.role === 'blogUser'">
-                  <router-link class="dropdown-item" :to="'/dashboard/' + user.id">Dashboard</router-link>
+                  <router-link class="dropdown-item" :to="'/dashboard/'">Dashboard</router-link>
                 </li>
                 <li v-if="user?.role === 'blogUser'">
                   <router-link class="dropdown-item" to="/profile">Profile</router-link>
