@@ -181,12 +181,12 @@ export default {
         return apiClient.get('/blogs');
     },
 
-    getUserBlogs(userId) {
-        return apiClient.get(`/blogs/user/${userId}`);
-    },
+    // getUserBlogs(userId) {
+    //     return apiClient.get(`/blogs/user/${userId}`);
+    // },
 
     getMyBlogs() {
-        return apiClient.get('/blogs/my-blogs');
+        return apiClient.get('/my-blogs');
     },
 
     createBlog(blogData) {

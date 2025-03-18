@@ -1,15 +1,18 @@
 <template>
     <div>
-bloguser
+        <MyBlog />
     </div>
 </template>
 
 <script>
-    export default {
-        
+import MyBlog from '@/components/MyBlog.vue';
+
+export default {
+    components: {
+        MyBlog
     }
+};
 </script>
 
-<style lang="scss" scoped>
-
+<style scoped>
 </style>
