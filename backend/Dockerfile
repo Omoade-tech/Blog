@@ -25,7 +25,7 @@ ENV DB_USERNAME=postgres.oawesktltrtfudeipgrs
 ENV DB_PASSWORD=Adelani8991#
 
 # Install PHP dependencies, cache config, and run migrations with debug
-ENV APP_URL=hhtps://blogpost_db.onrender.com
+ENV APP_URL=hhtps://blogpost-db.onrender.com
 RUN composer install --no-scripts --no-interaction \
     && php artisan config:cache \
     && echo "Connecting to $DB_HOST:$DB_PORT, DB: $DB_DATABASE" \
