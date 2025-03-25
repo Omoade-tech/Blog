@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://render.com/schemas/blueprint.json
+# Define Render services
+services:
+  - type: web
+    name: blogpost_db
+    runtime: docker
+    plan: free
+    rootDir: backend
+    envVars:
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        value: aws-0-us-west-1.pooler.supabase.com
+      - key: DB_PORT
+        value: 5432
+      - key: DB_DATABASE
+        value: postgres
+      - key: DB_USERNAME
+        value: postgres.oawesktltrtfudeipgrs
+      - key: DB_PASSWORD
+        value: Adelani8991#

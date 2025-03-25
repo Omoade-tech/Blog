@@ -21,11 +21,11 @@ ENV DB_CONNECTION=pgsql
 ENV DB_HOST=aws-0-us-west-1.pooler.supabase.com
 ENV DB_PORT=5432
 ENV DB_DATABASE=postgres
-ENV DB_USERNAME=postgres.
-ENV DB_PASSWORD=
+ENV DB_USERNAME=postgres.oawesktltrtfudeipgrs
+ENV DB_PASSWORD=Adelani8991#
 
 # Install PHP dependencies, cache config, and run migrations with debug
-ENV APP_URL=
+ENV APP_URL=hhtps://blogpost_db.onrender.com
 RUN composer install --no-scripts --no-interaction \
     && php artisan config:cache \
     && echo "Connecting to $DB_HOST:$DB_PORT, DB: $DB_DATABASE" \
