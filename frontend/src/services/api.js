@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const apiClient = axios.create({
-    baseURL: 'http://localhost:8000/api',
+    baseURL: 'https://blogpost-db.onrender.com/api',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json', // Fixed Accept header
@@ -13,7 +13,7 @@ export const apiClient = axios.create({
 // Get CSRF token before making requests
 async function getCsrfToken() {
     try{
-        const response = await axios.get('http://localhost:8000/sanctum/csrf-cookie',{
+        const response = await axios.get('https://blogpost-db.onrender.com/sanctum/csrf-cookie',{
             withCredentials: true,
             headers: {
                 'Accept': 'application/json'
