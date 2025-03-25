@@ -181,12 +181,12 @@ export default {
         return apiClient.get('/blogs');
     },
 
-    getUserBlogs(userId) {
-        return apiClient.get(`/blogs/user/${userId}`);
-    },
+    // getUserBlogs(userId) {
+    //     return apiClient.get(`/blogs/user/${userId}`);
+    // },
 
     getMyBlogs() {
-        return apiClient.get('/blogs/my-blogs');
+        return apiClient.get('/my-blogs');
     },
 
     createBlog(blogData) {
@@ -212,7 +212,7 @@ export default {
 
     // Profile endpoints
     getUserProfile() {
-        // Make sure we have a token before making the request
+        
         ensureToken();
         return apiClient.get('/profile').then(response => {
             console.log('Profile response:', response);
@@ -220,30 +220,33 @@ export default {
         });
     },
 
-    // Modify the updateUserProfile function in your api.js file
+    
 
 updateUserProfile(profileData) {
-  // Make sure we have a token before making the request
-  ensureToken();
-  
-  // Use FormData to handle file uploads
-  const formData = new FormData();
-  
-  // Append all profile fields to FormData
-  Object.keys(profileData).forEach(key => {
-      // Special handling for image file
-      if (key === 'image' && profileData[key] instanceof File) {
-          formData.append('image', profileData[key]);
-      } else if (profileData[key] !== null && profileData[key] !== undefined) {
-          formData.append(key, profileData[key]);
-      }
-  });
-  
-  
-  return apiClient.post('/profile/update', formData, {
-      headers: {
-          'Content-Type': 'multipart/form-data'
-      }
-  });
+    ensureToken();
+    
+    // Use FormData to handle file uploads
+    const formData = new FormData();
+    
+    // Append all profile fields to FormData
+    Object.keys(profileData).forEach(key => {
+        if (key === 'image') {
+            if (profileData[key] instanceof File) {
+                formData.append('image', profileData[key]);
+            }
+        } else if (profileData[key] !== null && profileData[key] !== undefined) {
+            formData.append(key, profileData[key]);
+        }
+    });
+    
+    return apiClient.post('/profile/update', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+            'Accept': 'application/json'
+        }
+    }).catch(error => {
+        console.error('Profile update error:', error.response?.data || error.message);
+        throw error;
+    });
 }
 }

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-// use App\Models\Token;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -38,5 +38,20 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-  
+    /**
+     * Get the URL for the user's profile image
+     */
+    public function getImageUrlAttribute()
+    {
+        if ($this->image) {
+            return Storage::disk('public')->url('profiles/' . $this->image);
+        }
+        
+        return null;
+    }
+
+    /**
+     * Append image_url to the model
+     */
+    protected $appends = ['image_url'];
 }
