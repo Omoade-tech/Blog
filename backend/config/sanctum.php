@@ -8,7 +8,11 @@ return [
     | Stateful Domains
     |--------------------------------------------------------------------------
     */
-'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'localhost,127.0.0.1')),
+'stateful' => [
+    'blog-post-aorf.onrender.com',
+    'localhost',
+],
+
     /*
     |--------------------------------------------------------------------------
     | Sanctum Guards
