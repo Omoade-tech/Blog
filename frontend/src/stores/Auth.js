@@ -6,7 +6,7 @@ export const useAuthStore = defineStore('auth', {
     user: null,
     token: null,
     isAuthenticated: false,
-    myBlogs: [] // Add this new state property
+    myBlogs: [] 
   }),
 
   getters: {
@@ -18,7 +18,7 @@ export const useAuthStore = defineStore('auth', {
       return this.token
     },
     
-    // Add a new getter for myBlogs
+    
     userBlogs() {
       return this.myBlogs
     }
@@ -55,6 +55,8 @@ export const useAuthStore = defineStore('auth', {
           throw new Error('Invalid response from server');
         }
         
+        console.log('Login response:', response.data);
+        
         // Extract user and token data
         const userData = response.data.user || response.data.data;
         const token = response.data.token || response.data.access_token;
@@ -73,6 +75,11 @@ export const useAuthStore = defineStore('auth', {
         this.user = userData;
         this.token = token;
         this.isAuthenticated = true;
+        
+        // Check if using fallback authentication
+        if (response.data.note === 'Using fallback authentication') {
+          console.warn('Using fallback authentication mode');
+        }
         
         return response.data;
       } catch (error) {
