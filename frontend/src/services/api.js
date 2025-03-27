@@ -13,10 +13,11 @@ export const apiClient = axios.create({
 // Get CSRF token before making requests
 async function getCsrfToken() {
     try {
-        const response = await axios.get(`${apiClient.defaults.baseURL}/sanctum/csrf-cookie`, {
+        const response = await axios.get('https://blogpost-db.onrender.com/sanctum/csrf-cookie', {
             withCredentials: true,
             headers: {
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             }
         });
         console.log('CSRF Token Response:', response.status);
