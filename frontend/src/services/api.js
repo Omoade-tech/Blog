@@ -62,6 +62,16 @@ async function getCsrfToken() {
 apiClient.interceptors.request.use(
     async (config) => {
         try {
+            // Skip CSRF token for specific endpoints
+            if (!config.url.includes('/login') && !config.url.includes('/register')) {
+                try {
+                    await getCsrfToken();
+                } catch (err) {
+                    console.warn("CSRF request failed but continuing:", err.message);
+                }
+            } else {
+                console.log(`Skipping CSRF token fetch for ${config.url}`);
+            }
             // Skip CSRF token for login and register requests to avoid circular dependencies
             if (!config.url.includes('/login') && !config.url.includes('/register')) {
                 await getCsrfToken().catch(err => console.warn("CSRF request failed but continuing:", err.message));
@@ -71,6 +81,7 @@ apiClient.interceptors.request.use(
             const token = localStorage.getItem('token');
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
+                console.log('Added Authorization header');
             } else {
                 console.warn('No token found in localStorage');
             }
@@ -165,9 +176,7 @@ export default {
     // Auth endpoints
     async login(credentials) {
         try {
-            // Get CSRF token first
-            await getCsrfToken().catch(e => console.warn('CSRF token fetch failed, but continuing with login'));
-            
+            // Skip CSRF token for login
             const response = await apiClient.post('/api/login', credentials);
             console.log('Raw login response:', response.data);
             
@@ -179,9 +188,8 @@ export default {
                 throw new Error('No token received from server');
             }
     
-            // Store the raw token without 'Bearer' prefix
-            const cleanToken = token.replace('Bearer ', '');
-            localStorage.setItem('token', cleanToken);
+            // Store the raw token
+            localStorage.setItem('token', token);
             
             // Store user data
             if (userData) {
@@ -189,42 +197,66 @@ export default {
             }
             
             // Set in axios defaults
-            apiClient.defaults.headers.common['Authorization'] = `Bearer ${cleanToken}`;
+            apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             
             return {
-                data: {
-                    token: cleanToken,
-                    user: userData
-                }
+                data: response.data
             };
         } catch (error) {
             console.error('Login failed:', error.response?.data || error.message);
+            
+            // If server error (500), try again without CSRF
+            if (error.response?.status === 500 && error.config && !error.config._retry) {
+                error.config._retry = true;
+                console.warn('Retrying login without CSRF protection...');
+                try {
+                    const retryResponse = await axios.post(`${apiClient.defaults.baseURL}/api/login`, credentials, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (retryResponse.data) {
+                        console.log('Retry login succeeded:', retryResponse.data);
+                        return { data: retryResponse.data };
+                    }
+                } catch (retryError) {
+                    console.error('Retry login also failed:', retryError.message);
+                }
+            }
+            
             throw error;
         }
     },
     
     register(formData) {
-        return apiClient.post('/api/register', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                'Accept': 'application/json'
-            },
-        }).catch(error => {
-            console.error('Registration error:', error.message);
-            // If there's a network error but we have the data, try a direct submission without CSRF
-            if (error.message === 'Network Error') {
-                console.warn('Attempting registration without CSRF validation as fallback...');
-                return axios.post(`${apiClient.defaults.baseURL}/api/register`, formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    withCredentials: true
+        try {
+            // Convert to a proper FormData object if it's not already one
+            const data = formData instanceof FormData ? formData : new FormData();
+            
+            // If regular object was passed, convert to FormData
+            if (!(formData instanceof FormData)) {
+                Object.keys(formData).forEach(key => {
+                    if (formData[key] !== null && formData[key] !== undefined) {
+                        data.append(key, formData[key]);
+                    }
                 });
             }
+            
+            // Log what we're sending
+            console.log('Sending registration data:', Object.fromEntries(data.entries()));
+            
+            return apiClient.post('/api/register', data, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Accept': 'application/json'
+                }
+            });
+        } catch (error) {
+            console.error('Registration preparation error:', error);
             throw error;
-        });
+        }
     },
     
     logout() {
