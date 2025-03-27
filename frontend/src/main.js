@@ -7,8 +7,6 @@ import "vue-toastification/dist/index.css";
 import App from './App.vue'
 import router from './router'
 
-axios.defaults.withCredentials = true;
-axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 const app = createApp(App)
 
 // const toast = createToast({
