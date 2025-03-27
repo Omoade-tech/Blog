@@ -35,6 +35,7 @@
                             <p class="card-text text-muted">
                                 Our blog is more than just a platform - it's a community where ideas 
                                 are shared, discussions are sparked, and learning never stops.
+                                
                             </p>
                         </div>
                     </div>
