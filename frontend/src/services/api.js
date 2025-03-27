@@ -1,19 +1,19 @@
 import axios from 'axios';
 
 export const apiClient = axios.create({
-    baseURL: 'https://blogpost-db.onrender.com/api',
+    baseURL: 'https://blogpost-db.onrender.com',
     headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json', // Fixed Accept header
-        'X-Requested-with': 'XMLHttpRequest'
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
     },
-    withCredentials: true // Fixed typo in withCredentials
+    withCredentials: true
 });
 
 // Get CSRF token before making requests
 async function getCsrfToken() {
-    try{
-        const response = await axios.get('https://blogpost-db.onrender.com/sanctum/csrf-cookie',{
+    try {
+        const response = await axios.get(`${apiClient.defaults.baseURL}/sanctum/csrf-cookie`, {
             withCredentials: true,
             headers: {
                 'Accept': 'application/json'
@@ -22,9 +22,9 @@ async function getCsrfToken() {
         console.log('CSRF Token Response:', response.status);
         return response;
     } catch (error) {
-        console.error('Failed to get CSRF token:', error.response || error);
+        console.error('Failed to get CSRF token:', error.response?.data || error.message);
         throw error;
-    }  
+    }
 }
 
 // Request interceptor
@@ -129,7 +129,7 @@ export default {
     // Auth endpoints
     async login(credentials) {
         try {
-            const response = await apiClient.post('/login', credentials);
+            const response = await apiClient.post('/api/login', credentials);
             console.log('Raw login response:', response.data);
             
             // Check for token in various possible locations
@@ -165,7 +165,7 @@ export default {
     },
     
     register(formData) {
-        return apiClient.post('/register', formData, {
+        return apiClient.post('/api/register', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
@@ -173,12 +173,12 @@ export default {
     },
     
     logout() {
-        return apiClient.post('/logout');
+        return apiClient.post('/api/logout');
     },
     
     // Blog endpoints
     getAllBlogs() {
-        return apiClient.get('/blogs');
+        return apiClient.get('/api/blogs');
     },
 
     // getUserBlogs(userId) {
@@ -186,23 +186,23 @@ export default {
     // },
 
     getMyBlogs() {
-        return apiClient.get('/my-blogs');
+        return apiClient.get('/api/my-blogs');
     },
 
     createBlog(blogData) {
-        return apiClient.post('/blogs', blogData);
+        return apiClient.post('/api/blogs', blogData);
     },
 
     updateBlog(id, blogData) {
-        return apiClient.put(`/blogs/${id}`, blogData);
+        return apiClient.put(`/api/blogs/${id}`, blogData);
     },
 
     deleteBlog(id) {
-        return apiClient.delete(`/blogs/${id}`);
+        return apiClient.delete(`/api/blogs/${id}`);
     },
 
     searchBlogs(query, filter = 'all') {
-        return apiClient.get('/blogs/search', {
+        return apiClient.get('/api/blogs/search', {
             params: {
                 query,
                 filter
@@ -214,7 +214,7 @@ export default {
     getUserProfile() {
         
         ensureToken();
-        return apiClient.get('/profile').then(response => {
+        return apiClient.get('/api/profile').then(response => {
             console.log('Profile response:', response);
             return response;
         });
@@ -239,7 +239,7 @@ updateUserProfile(profileData) {
         }
     });
     
-    return apiClient.post('/profile/update', formData, {
+    return apiClient.post('/api/profile/update', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
             'Accept': 'application/json'
