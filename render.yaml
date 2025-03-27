@@ -8,16 +8,8 @@ services:
     rootDir: backend
     buildCommand: |
       cp .env.render .env
-      composer install --no-dev --optimize-autoloader
-      php artisan key:generate --force
-    startCommand: |
-      php artisan config:clear
-      php artisan cache:clear
-      php artisan route:clear
-      php artisan view:clear
-      php artisan migrate:refresh --force
-      php artisan storage:link
-      php -S 0.0.0.0:$PORT -t public
+      chmod +x deploy-entrypoint.sh
+    startCommand: ./deploy-entrypoint.sh
     envVars:
       - key: DB_CONNECTION
         value: pgsql
@@ -36,6 +28,6 @@ services:
       - key: APP_DEBUG
         value: true
       - key: SANCTUM_STATEFUL_DOMAINS
-        value: blog-post-aorf.onrender.com,blogpost-db.onrender.com
+        value: blog-post-aorf.onrender.com,blogpost-db.onrender.com,.onrender.com
       - key: SESSION_DOMAIN
         value: .onrender.com

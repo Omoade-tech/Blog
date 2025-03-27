@@ -16,27 +16,34 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 WORKDIR /var/www
 COPY . /var/www
 
-# Set Supabase environment variables
-ENV DB_CONNECTION=pgsql
-ENV DB_HOST=aws-0-us-west-1.pooler.supabase.com
-ENV DB_PORT=5432
-ENV DB_DATABASE=postgres
-ENV DB_USERNAME=postgres.oawesktltrtfudeipgrs
-ENV DB_PASSWORD=Adelani8991#
+# Set environment variables
+ENV APP_URL=https://blogpost-db.onrender.com
+ENV APP_DEBUG=true
+ENV APP_ENV=production
 
-# Install PHP dependencies, cache config, and run migrations with debug
-ENV APP_URL=hhtps://blogpost-db.onrender.com
-RUN composer install --no-scripts --no-interaction \
-    && php artisan config:cache \
-    && echo "Connecting to $DB_HOST:$DB_PORT, DB: $DB_DATABASE" \
-    && php artisan migrate:fresh --force --verbose \
-    && php artisan storage:link
+# Install PHP dependencies but skip scripts that might need DB connection
+RUN composer install --no-dev --optimize-autoloader --no-scripts
+
+# Copy env file - will be overridden by render.yaml's buildCommand
+COPY .env.render .env
+
+# Clear configuration - avoid caching configuration as it will be set at runtime
+RUN php artisan config:clear || true
+RUN php artisan cache:clear || true
+
+# Don't run migrations here - they will be run at startup
+# RUN php artisan migrate --force
 
 # Permissions
 RUN chown -R www-data:www-data /var/www \
     && chmod 755 /var/www
 
-# Expose port
-EXPOSE 10000
+# Expose port 
+EXPOSE 8000
 
-CMD ["php", "artisan", "serve", "--host", "0.0.0.0", "--port", "10000"]
+# Define entrypoint script to be run at startup
+COPY deploy-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/deploy-entrypoint.sh
+
+# Use our entrypoint script
+CMD ["/usr/local/bin/deploy-entrypoint.sh"]
