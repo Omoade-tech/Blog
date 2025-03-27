@@ -9,11 +9,11 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
+    'stateful' => explode(',', $_ENV['SANCTUM_STATEFUL_DOMAINS'] ?? sprintf(
         '%s%s',
         'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,blogpost-db.onrender.com,blog-post-aorf.onrender.com',
-        env('APP_URL') ? ','.parse_url(env('APP_URL'), PHP_URL_HOST) : ''
-    ))),
+        isset($_ENV['APP_URL']) ? ','.parse_url($_ENV['APP_URL'], PHP_URL_HOST) : ''
+    )),
 
     /*
     |--------------------------------------------------------------------------
@@ -37,7 +37,7 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'token_prefix' => env('SANCTUM_TOKEN_PREFIX', ''),
+    'token_prefix' => $_ENV['SANCTUM_TOKEN_PREFIX'] ?? '',
 
     /*
     |--------------------------------------------------------------------------
