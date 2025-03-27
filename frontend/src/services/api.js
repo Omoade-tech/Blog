@@ -10,20 +10,51 @@ export const apiClient = axios.create({
     withCredentials: true
 });
 
+// Helper function to get cookie value
+function getCookieValue(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
 // Get CSRF token before making requests
 async function getCsrfToken() {
     try {
-        const response = await axios.get(`${apiClient.defaults.baseURL}/sanctum/csrf-cookie`, {
-            withCredentials: true,
-            headers: {
-                'Accept': 'application/json'
+        console.log('Fetching CSRF token...');
+        
+        // Try to get token directly from Laravel endpoint first
+        try {
+            const csrfResponse = await axios.get(`${apiClient.defaults.baseURL}/api/csrf-token`, {
+                withCredentials: true
+            });
+            
+            if (csrfResponse.data && csrfResponse.data.csrf_token) {
+                console.log('Got CSRF token from API endpoint');
+                apiClient.defaults.headers['X-CSRF-TOKEN'] = csrfResponse.data.csrf_token;
+                return true;
             }
+        } catch (err) {
+            console.warn('Could not get token from API endpoint, trying sanctum cookie');
+        }
+        
+        // Fall back to sanctum cookie method
+        const response = await axios.get(`${apiClient.defaults.baseURL}/sanctum/csrf-cookie`, {
+            withCredentials: true
         });
-        console.log('CSRF Token Response:', response.status);
-        return response;
+        
+        // Update the X-XSRF-TOKEN header with the new token
+        const token = getCookieValue('XSRF-TOKEN');
+        if (token) {
+            apiClient.defaults.headers['X-XSRF-TOKEN'] = token;
+            return true;
+        }
+        
+        console.warn('No CSRF token found in cookies after request');
+        return false;
     } catch (error) {
         console.error('Failed to get CSRF token:', error.response?.data || error.message);
-        throw error;
+        return false;
     }
 }
 
@@ -41,6 +72,10 @@ apiClient.interceptors.request.use(
             } else {
                 console.log(`Skipping CSRF token fetch for ${config.url}`);
             }
+            // Skip CSRF token for login and register requests to avoid circular dependencies
+            if (!config.url.includes('/login') && !config.url.includes('/register')) {
+                await getCsrfToken().catch(err => console.warn("CSRF request failed but continuing:", err.message));
+            }
             
             // Get token from localStorage
             const token = localStorage.getItem('token');
@@ -51,7 +86,6 @@ apiClient.interceptors.request.use(
                 console.warn('No token found in localStorage');
             }
     
-            // Additional debugging
             console.log('Request Config:', {
                 url: config.url,
                 method: config.method,
@@ -107,8 +141,6 @@ function handleErrorResponse(response) {
             // Clear auth state on unauthorized
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('user');
             break;
         case 403:
             console.error('Forbidden access:', message);
@@ -118,6 +150,13 @@ function handleErrorResponse(response) {
             break;
         case 422:
             console.error('Validation error:', message);
+            break;
+        case 500:
+            console.error(`Error ${status}:`, message);
+            // If server error on login, try local development fallback
+            if (response.config.url.includes('/login') || response.config.url.includes('/sanctum/csrf-cookie')) {
+                console.warn('Server error on login attempt - database may be unavailable');
+            }
             break;
         default:
             console.error(`Error ${status}:`, message);
