@@ -10,7 +10,19 @@ echo "DB_CONNECTION: $DB_CONNECTION"
 echo "DB_HOST: $DB_HOST"
 echo "DB_DATABASE: $DB_DATABASE"
 
+# Verify existence of critical files
+echo "Checking for critical Laravel files..."
+for file in "app/Http/Kernel.php" "app/Console/Kernel.php"; do
+  if [ ! -f "$file" ]; then
+    echo "ERROR: Missing required file: $file"
+    exit 1
+  else
+    echo "✅ Found $file"
+  fi
+done
+
 # Clear caches
+echo "Clearing caches..."
 php artisan config:clear
 php artisan cache:clear
 php artisan route:clear
