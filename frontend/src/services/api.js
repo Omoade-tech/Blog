@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// Get API URL from environment variables or use default
+const API_URL = import.meta.env.VITE_API_URL || 'https://blogpost-api.onrender.com';
+
+console.log('API Service initializing with URL:', API_URL);
+
 export const apiClient = axios.create({
-    baseURL: 'https://blogpost-db.onrender.com',
+    baseURL: API_URL,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
