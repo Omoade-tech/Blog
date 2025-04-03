@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Symfony\Component\HttpFoundation\Response;
 
 class HandleCors
@@ -13,16 +14,32 @@ class HandleCors
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next)
     {
         $response = $next($request);
 
-        // Direct CORS header application for Render deployment
-        $response->headers->set('Access-Control-Allow-Origin', 'https://blog-post-aorf.onrender.com');
-        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-XSRF-TOKEN');
-        $response->headers->set('Access-Control-Allow-Credentials', 'true');
-        $response->headers->set('Access-Control-Max-Age', '86400');
+        // Get allowed origins from config
+        $allowedOrigins = Config::get('cors.allowed_origins', ['*']);
+        $origin = $request->header('Origin');
+        
+        // Check if the request origin is in the allowed list
+        if ($origin && (in_array('*', $allowedOrigins) || in_array($origin, $allowedOrigins))) {
+            $response->headers->set('Access-Control-Allow-Origin', $origin);
+        } else {
+            // Check against patterns if direct match not found
+            $allowedPatterns = Config::get('cors.allowed_origins_patterns', []);
+            foreach ($allowedPatterns as $pattern) {
+                if ($origin && preg_match($pattern, $origin)) {
+                    $response->headers->set('Access-Control-Allow-Origin', $origin);
+                    break;
+                }
+            }
+        }
+        
+        $response->headers->set('Access-Control-Allow-Methods', implode(',', Config::get('cors.allowed_methods', ['*'])));
+        $response->headers->set('Access-Control-Allow-Headers', implode(',', Config::get('cors.allowed_headers', ['*'])));
+        $response->headers->set('Access-Control-Allow-Credentials', Config::get('cors.supports_credentials', true) ? 'true' : 'false');
+        $response->headers->set('Access-Control-Max-Age', Config::get('cors.max_age', 0));
 
         return $response;
     }
