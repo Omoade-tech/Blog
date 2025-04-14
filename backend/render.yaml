@@ -2,7 +2,7 @@
 # Define Render services
 services:
   - type: web
-    name: Birthday_Server
+    name: Blog_db
     runtime: docker
     plan: free
     rootDir: main
