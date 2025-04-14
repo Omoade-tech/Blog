@@ -12,7 +12,8 @@ export const apiClient = axios.create({
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
     },
-    withCredentials: true
+    withCredentials: true,
+    timeout: 10000 // 10 seconds timeout
 });
 
 // Helper function to get cookie value
@@ -31,7 +32,8 @@ async function getCsrfToken() {
         // Try to get token directly from Laravel endpoint first
         try {
             const csrfResponse = await axios.get(`${apiClient.defaults.baseURL}/api/csrf-token`, {
-                withCredentials: true
+                withCredentials: true,
+                timeout: 5000
             });
             
             if (csrfResponse.data && csrfResponse.data.csrf_token) {
@@ -45,7 +47,8 @@ async function getCsrfToken() {
         
         // Fall back to sanctum cookie method
         const response = await axios.get(`${apiClient.defaults.baseURL}/sanctum/csrf-cookie`, {
-            withCredentials: true
+            withCredentials: true,
+            timeout: 5000
         });
         
         // Update the X-XSRF-TOKEN header with the new token
@@ -69,34 +72,15 @@ apiClient.interceptors.request.use(
         try {
             // Skip CSRF token for specific endpoints
             if (!config.url.includes('/login') && !config.url.includes('/register')) {
-                try {
-                    await getCsrfToken();
-                } catch (err) {
-                    console.warn("CSRF request failed but continuing:", err.message);
-                }
-            } else {
-                console.log(`Skipping CSRF token fetch for ${config.url}`);
-            }
-            // Skip CSRF token for login and register requests to avoid circular dependencies
-            if (!config.url.includes('/login') && !config.url.includes('/register')) {
-                await getCsrfToken().catch(err => console.warn("CSRF request failed but continuing:", err.message));
+                await getCsrfToken();
             }
             
             // Get token from localStorage
             const token = localStorage.getItem('token');
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
-                console.log('Added Authorization header');
-            } else {
-                console.warn('No token found in localStorage');
             }
-    
-            console.log('Request Config:', {
-                url: config.url,
-                method: config.method,
-                headers: config.headers
-            });
-    
+            
             return config;
         } catch (error) {
             console.error('Request Interceptor Error:', error);
@@ -112,61 +96,38 @@ apiClient.interceptors.request.use(
 // Response interceptor
 apiClient.interceptors.response.use(
     (response) => {
-        console.log('Response success:', {
-            url: response.config.url,
-            status: response.status,
-            hasData: !!response.data
-        });
         return response;
     },
     (error) => {
         if (error.response) {
-            console.error('API Error:', {
-                url: error.config?.url,
-                status: error.response.status,
-                message: error.response.data?.message,
-                data: error.response.data
-            });
-            
             // Handle specific error status codes
-            handleErrorResponse(error.response);
+            switch (error.response.status) {
+                case 401:
+                    // Clear auth state on unauthorized
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    break;
+                case 403:
+                    console.error('Forbidden access:', error.response.data?.message);
+                    break;
+                case 404:
+                    console.error('Resource not found:', error.response.data?.message);
+                    break;
+                case 422:
+                    console.error('Validation error:', error.response.data?.errors);
+                    break;
+                case 500:
+                    console.error('Server error:', error.response.data?.message);
+                    break;
+                default:
+                    console.error('API Error:', error.response.data);
+            }
         } else {
-            console.error('API Error (no response):', error.message);
+            console.error('Network Error:', error.message);
         }
         return Promise.reject(error);
     }
 );
-
-function handleErrorResponse(response) {
-    const status = response.status;
-    const message = response.data?.message || 'An error occurred.';
-
-    switch (status) {
-        case 401:
-            // Clear auth state on unauthorized
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            break;
-        case 403:
-            console.error('Forbidden access:', message);
-            break;
-        case 404:
-            console.error('Resource not found:', message);
-            break;
-        case 422:
-            console.error('Validation error:', message);
-            break;
-        case 500:
-            console.error(`Error ${status}:`, message);
-            // If server error on login, try local development fallback
-            if (response.config.url.includes('/login') || response.config.url.includes('/sanctum/csrf-cookie')) {
-                console.warn('Server error on login attempt - database may be unavailable');
-            }
-            break;
-        default:
-            console.error(`Error ${status}:`, message);
-    }
-}
 
 function ensureToken() {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token')
