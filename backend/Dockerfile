@@ -16,40 +16,40 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 WORKDIR /var/www
 COPY . /var/www
 
-# Set environment variables
-ENV APP_URL=https://blogpost-db.onrender.com
-ENV APP_DEBUG=false
-ENV APP_ENV=production
-ENV DB_CONNECTION=pgsql
-ENV DB_HOST=aws-0-us-west-1.pooler.supabase.com
-ENV DB_PORT=5432
-ENV DB_DATABASE=postgres
-ENV DB_USERNAME=postgres.oawesktltrtfudeipgrs
-ENV DB_PASSWORD=Adelani8991#
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
 
-# Install PHP dependencies but skip scripts that might need DB connection
-RUN composer install --no-dev --optimize-autoloader --no-scripts
-
-# Copy env file - will be overridden by render.yaml's buildCommand
-COPY .env.render .env
-
-# Clear configuration - avoid caching configuration as it will be set at runtime
-RUN php artisan config:clear || true
-RUN php artisan cache:clear || true
-
-# Don't run migrations here - they will be run at startup
-# RUN php artisan migrate --force
-
-# Permissions
+# Set permissions
 RUN chown -R www-data:www-data /var/www \
-    && chmod 755 /var/www
+    && chmod -R 755 /var/www
 
-# Expose port 
+# Create entrypoint script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+# Wait for database to be ready\n\
+echo "Waiting for database connection..."\n\
+until php artisan db:show > /dev/null 2>&1; do\n\
+    echo "Database is unavailable - sleeping"\n\
+    sleep 2\n\
+done\n\
+\n\
+# Run migrations\n\
+echo "Running migrations..."\n\
+php artisan migrate --force --verbose\n\
+\n\
+# Clear and cache config\n\
+php artisan config:cache\n\
+php artisan route:cache\n\
+php artisan view:cache\n\
+\n\
+# Start the application\n\
+php artisan serve --host 0.0.0.0 --port 8000\n\
+' > /usr/local/bin/docker-entrypoint.sh \
+    && chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Expose port
 EXPOSE 8000
 
-# Define entrypoint script to be run at startup
-COPY deploy-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/deploy-entrypoint.sh
-
-# Use our entrypoint script
-CMD ["/usr/local/bin/deploy-entrypoint.sh"]
+# Use the entrypoint script
+ENTRYPOINT ["docker-entrypoint.sh"]
