@@ -14,10 +14,23 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
-    outDir: 'dist'
+    outDir: 'dist',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['vue', 'vue-router', 'pinia', 'axios'],
+        }
+      }
+    }
   },
-  define: {
-    // This will make environment variables available in your app
-    'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'https://blogpost-api.onrender.com')
+  server: {
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_URL || 'https://blogpost-api.onrender.com',
+        changeOrigin: true,
+        secure: true,
+        ws: true
+      }
+    }
   }
 })

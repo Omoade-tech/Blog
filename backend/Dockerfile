@@ -18,8 +18,14 @@ COPY . /var/www
 
 # Set environment variables
 ENV APP_URL=https://blogpost-db.onrender.com
-ENV APP_DEBUG=true
+ENV APP_DEBUG=false
 ENV APP_ENV=production
+ENV DB_CONNECTION=pgsql
+ENV DB_HOST=aws-0-us-west-1.pooler.supabase.com
+ENV DB_PORT=5432
+ENV DB_DATABASE=postgres
+ENV DB_USERNAME=postgres.oawesktltrtfudeipgrs
+ENV DB_PASSWORD=Adelani8991#
 
 # Install PHP dependencies but skip scripts that might need DB connection
 RUN composer install --no-dev --optimize-autoloader --no-scripts
