@@ -27,9 +27,6 @@ RUN chown -R www-data:www-data /var/www \
 RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
-echo "Current ENV:"\n\
-env\n\
-\n\
 # Wait for database to be ready\n\
 echo "Waiting for database connection..."\n\
 until php artisan db:show > /dev/null 2>&1; do\n\
@@ -37,16 +34,19 @@ until php artisan db:show > /dev/null 2>&1; do\n\
     sleep 2\n\
 done\n\
 \n\
+# Run migrations\n\
 echo "Running migrations..."\n\
 php artisan migrate --force --verbose\n\
 \n\
+# Clear and cache config\n\
 php artisan config:cache\n\
 php artisan route:cache\n\
 php artisan view:cache\n\
 \n\
+# Start the application\n\
 php artisan serve --host 0.0.0.0 --port 8000\n\
-' > /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
-
+' > /usr/local/bin/docker-entrypoint.sh \
+    && chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose port
 EXPOSE 8000
