@@ -26,7 +26,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: process.env.VITE_API_URL || 'https://blogpost-api.onrender.com',
+        target: process.env.VITE_API_URL || 'https://blog-46qn.onrender.com',
         changeOrigin: true,
         secure: true,
         ws: true
