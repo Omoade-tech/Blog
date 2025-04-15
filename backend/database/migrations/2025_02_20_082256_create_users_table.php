@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->integer('age')->nullable();
             $table->enum('sex', ['male','female','other'])->nullable();  
-            $table->string('phoneNumber')->nullable();
+            $table->string('phone_number')->nullable();
             $table->enum('status', ['married','single', 'divorce'])->nullable();
             $table->string('address')->nullable();
             $table->string('city')->nullable();
