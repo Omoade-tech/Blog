@@ -38,7 +38,7 @@ until php artisan db:show > /dev/null 2>&1; do\n\
 done\n\
 \n\
 echo "Running migrations..."\n\
-php artisan migrate:fresh --seed --force --verbose\n\
+php artisan migrate:rollback --force --verbose\n\
 \n\
 php artisan config:cache\n\
 php artisan route:cache\n\
