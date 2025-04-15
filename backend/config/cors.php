@@ -15,12 +15,13 @@ return [
     |
     */
 
-   'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout'], 
+   'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'register'], 
     'allowed_methods' => ['*'], 
     'allowed_origins' => [
         'https://blog-post-aorf.onrender.com',
         'https://blog-post-frontend.onrender.com', 
-        'https://blogpost-api.onrender.com',
+        'APP_URL=https://blog-46qn.onrender.com
+',
         'http://localhost:3000',
         'http://localhost:5173'
     ], 
