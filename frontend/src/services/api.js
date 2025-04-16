@@ -29,7 +29,7 @@ function getCookieValue(name) {
 async function getCsrfToken() {
     try {
         console.log('Fetching CSRF token...');
-        await axios.get(`${cleanApiUrl}/sanctum/csrf-cookie`, {
+        const response = await apiClient.get('/sanctum/csrf-cookie', {
             withCredentials: true,
             timeout: 5000
         });
