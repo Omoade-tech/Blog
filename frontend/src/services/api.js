@@ -2,21 +2,22 @@ import axios from 'axios';
 
 // Get API URL from environment variables or use default
 const API_URL = import.meta.env.VITE_API_URL || 'https://blog-46qn.onrender.com';
+const cleanApiUrl = API_URL.replace(/\/$/, '');
+console.log('API Service initializing with URL:', cleanApiUrl);
 
-console.log('API Service initializing with URL:', API_URL);
-
+// Axios instance
 export const apiClient = axios.create({
-    baseURL: API_URL,
+    baseURL: cleanApiUrl,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
     },
     withCredentials: true,
-    timeout: 10000 // 10 seconds timeout
+    timeout: 10000
 });
 
-// Helper function to get cookie value
+// Get cookie value (used for XSRF token)
 function getCookieValue(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -24,282 +25,186 @@ function getCookieValue(name) {
     return null;
 }
 
-// Get CSRF token before making requests
+// Fetch CSRF token
 async function getCsrfToken() {
     try {
         console.log('Fetching CSRF token...');
-        
-        // Try to get token directly from Laravel endpoint first
-        try {
-            const csrfResponse = await axios.get(`${apiClient.defaults.baseURL}/api/csrf-token`, {
-                withCredentials: true,
-                timeout: 5000
-            });
-            
-            if (csrfResponse.data && csrfResponse.data.csrf_token) {
-                console.log('Got CSRF token from API endpoint');
-                apiClient.defaults.headers['X-CSRF-TOKEN'] = csrfResponse.data.csrf_token;
-                return true;
-            }
-        } catch (err) {
-            console.warn('Could not get token from API endpoint, trying sanctum cookie');
-        }
-        
-        // Fall back to sanctum cookie method
-        const response = await axios.get(`${apiClient.defaults.baseURL}/sanctum/csrf-cookie`, {
+        await axios.get(`${cleanApiUrl}/sanctum/csrf-cookie`, {
             withCredentials: true,
             timeout: 5000
         });
-        
-        // Update the X-XSRF-TOKEN header with the new token
+
         const token = getCookieValue('XSRF-TOKEN');
         if (token) {
             apiClient.defaults.headers['X-XSRF-TOKEN'] = token;
             return true;
         }
-        
-        console.warn('No CSRF token found in cookies after request');
+
+        console.warn('CSRF token not found in cookies.');
         return false;
     } catch (error) {
-        console.error('Failed to get CSRF token:', error.response?.data || error.message);
+        console.error('Failed to fetch CSRF token:', error.message);
         return false;
     }
 }
 
-// Request interceptor
+// Request Interceptor
 apiClient.interceptors.request.use(
     async (config) => {
-        try {
-            // Skip CSRF token for specific endpoints
-            if (!config.url.includes('/login') && !config.url.includes('/register')) {
-                await getCsrfToken();
-            }
-            
-            // Get token from localStorage
-            const token = localStorage.getItem('token');
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
-            
-            return config;
-        } catch (error) {
-            console.error('Request Interceptor Error:', error);
-            return Promise.reject(error);
-        }
+        const skipCsrfFor = ['/api/login', '/api/register'];
+        const shouldSkip = skipCsrfFor.some(url => config.url.includes(url));
+        if (!shouldSkip) await getCsrfToken();
+
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        if (token) config.headers.Authorization = `Bearer ${token}`;
+
+        return config;
     },
-    (error) => {
-        console.error('Request Error:', error);
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
-// Response interceptor
+// Response Interceptor
 apiClient.interceptors.response.use(
-    (response) => {
-        return response;
-    },
-    (error) => {
+    response => response,
+    error => {
         if (error.response) {
-            // Handle specific error status codes
-            switch (error.response.status) {
+            const { status, data } = error.response;
+            switch (status) {
                 case 401:
-                    // Clear auth state on unauthorized
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     break;
                 case 403:
-                    console.error('Forbidden access:', error.response.data?.message);
+                    console.error('Forbidden:', data.message);
                     break;
                 case 404:
-                    console.error('Resource not found:', error.response.data?.message);
+                    console.error('Not found:', data.message);
                     break;
                 case 422:
-                    console.error('Validation error:', error.response.data?.errors);
+                    console.error('Validation error:', data.errors);
                     break;
                 case 500:
-                    console.error('Server error:', error.response.data?.message);
+                    console.error('Server error:', data.message);
                     break;
                 default:
-                    console.error('API Error:', error.response.data);
+                    console.error('Unhandled API error:', data);
             }
         } else {
-            console.error('Network Error:', error.message);
+            console.error('Network error:', error.message);
         }
         return Promise.reject(error);
     }
 );
 
+// Ensure auth token exists before secure requests
 function ensureToken() {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token')
-    if (!token) {
-        console.error('No authentication token found')
-        throw new Error('Authentication token is missing')
-    }
-    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) throw new Error('Authentication token is missing');
+    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
 
 export default {
-    // Auth endpoints
+    // Auth: Login
     async login(credentials) {
         try {
-            // Skip CSRF token for login
             const response = await apiClient.post('/api/login', credentials);
-            console.log('Raw login response:', response.data);
-            
-            // Check for token in various possible locations
-            const token = response.data.token || response.data.access_token || response.data.data?.token;
-            const userData = response.data.user || response.data.data;
-            
-            if (!token) {
-                throw new Error('No token received from server');
-            }
-    
-            // Store the raw token
+            const token = response.data.token || response.data.access_token;
+            const user = response.data.user || response.data.data;
+
+            if (!token) throw new Error('No token provided by server');
+
             localStorage.setItem('token', token);
-            
-            // Store user data
-            if (userData) {
-                localStorage.setItem('user', JSON.stringify(userData));
-            }
-            
-            // Set in axios defaults
+            localStorage.setItem('user', JSON.stringify(user));
             apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            
-            return {
-                data: response.data
-            };
+
+            return { data: response.data };
         } catch (error) {
             console.error('Login failed:', error.response?.data || error.message);
-            
-            // If server error (500), try again without CSRF
-            if (error.response?.status === 500 && error.config && !error.config._retry) {
-                error.config._retry = true;
-                console.warn('Retrying login without CSRF protection...');
-                try {
-                    const retryResponse = await axios.post(`${apiClient.defaults.baseURL}/api/login`, credentials, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (retryResponse.data) {
-                        console.log('Retry login succeeded:', retryResponse.data);
-                        return { data: retryResponse.data };
-                    }
-                } catch (retryError) {
-                    console.error('Retry login also failed:', retryError.message);
-                }
-            }
-            
             throw error;
         }
     },
-    
-    register(formData) {
+
+    // Auth: Register (no token required)
+    async register(data) {
         try {
-            // Convert to a proper FormData object if it's not already one
-            const data = formData instanceof FormData ? formData : new FormData();
-            
-            // If regular object was passed, convert to FormData
-            if (!(formData instanceof FormData)) {
-                Object.keys(formData).forEach(key => {
-                    if (formData[key] !== null && formData[key] !== undefined) {
-                        data.append(key, formData[key]);
+            const formData = data instanceof FormData ? data : new FormData();
+
+            if (!(data instanceof FormData)) {
+                Object.entries(data).forEach(([key, value]) => {
+                    if (value !== null && value !== undefined) {
+                        formData.append(key, value);
                     }
                 });
             }
-            
-            // Log what we're sending
-            console.log('Sending registration data:', Object.fromEntries(data.entries()));
-            
-            return apiClient.post('/api/register', data, {
+
+            console.log('Sending registration data:', Object.fromEntries(formData.entries()));
+
+            return await apiClient.post('/api/register', formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Accept': 'application/json'
+                    'Content-Type': 'multipart/form-data'
                 }
             });
         } catch (error) {
-            console.error('Registration preparation error:', error);
+            console.error('Registration failed:', error.response?.data || error.message);
             throw error;
         }
     },
-    
+
     logout() {
         return apiClient.post('/api/logout');
     },
-    
-    // Blog endpoints
+
+    // Blogs
     getAllBlogs() {
         return apiClient.get('/api/blogs');
     },
 
-    // getUserBlogs(userId) {
-    //     return apiClient.get(`/blogs/user/${userId}`);
-    // },
-
     getMyBlogs() {
+        ensureToken();
         return apiClient.get('/api/my-blogs');
     },
 
-    createBlog(blogData) {
-        return apiClient.post('/api/blogs', blogData);
+    createBlog(data) {
+        ensureToken();
+        return apiClient.post('/api/blogs', data);
     },
 
-    updateBlog(id, blogData) {
-        return apiClient.put(`/api/blogs/${id}`, blogData);
+    updateBlog(id, data) {
+        ensureToken();
+        return apiClient.put(`/api/blogs/${id}`, data);
     },
 
     deleteBlog(id) {
+        ensureToken();
         return apiClient.delete(`/api/blogs/${id}`);
     },
 
     searchBlogs(query, filter = 'all') {
         return apiClient.get('/api/blogs/search', {
-            params: {
-                query,
-                filter
-            }
+            params: { query, filter }
         });
     },
 
-    // Profile endpoints
+    // Profile
     getUserProfile() {
-        
         ensureToken();
-        return apiClient.get('/api/profile').then(response => {
-            console.log('Profile response:', response);
-            return response;
-        });
+        return apiClient.get('/api/profile');
     },
 
-    
+    updateUserProfile(profileData) {
+        ensureToken();
+        const formData = new FormData();
 
-updateUserProfile(profileData) {
-    ensureToken();
-    
-    // Use FormData to handle file uploads
-    const formData = new FormData();
-    
-    // Append all profile fields to FormData
-    Object.keys(profileData).forEach(key => {
-        if (key === 'image') {
-            if (profileData[key] instanceof File) {
-                formData.append('image', profileData[key]);
+        Object.entries(profileData).forEach(([key, value]) => {
+            if (value !== null && value !== undefined) {
+                formData.append(key, value instanceof File ? key : key, value);
             }
-        } else if (profileData[key] !== null && profileData[key] !== undefined) {
-            formData.append(key, profileData[key]);
-        }
-    });
-    
-    return apiClient.post('/api/profile/update', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-            'Accept': 'application/json'
-        }
-    }).catch(error => {
-        console.error('Profile update error:', error.response?.data || error.message);
-        throw error;
-    });
-}
-}
+        });
+
+        return apiClient.post('/api/profile/update', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+    }
+};
