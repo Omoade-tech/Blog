@@ -20,8 +20,7 @@ return [
     'allowed_origins' => [
         'https://blog-post-aorf.onrender.com',
         'https://blog-post-frontend.onrender.com', 
-        'APP_URL=https://blog-46qn.onrender.com
-',
+        'https://blog-46qn.onrender.com',
         'http://localhost:3000',
         'http://localhost:5173'
     ], 
@@ -29,7 +28,7 @@ return [
         '#^https://.*\.onrender\.com$#'
     ],
     'allowed_headers' => ['*'], 
-    'exposed_headers' => ['*'],
+    'exposed_headers' => [],
     'max_age' => 0,
     'supports_credentials' => true, 
 
