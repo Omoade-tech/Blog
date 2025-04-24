@@ -11,23 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->string('password');
-            $table->enum('role', ['admin','blogUser'])->default('blogUser');
-            $table->string('image')->nullable();
-            $table->integer('age')->nullable();
-            $table->enum('sex', ['male','female','other'])->nullable();  
-            $table->string('phone_number')->nullable();
-            $table->enum('status', ['married','single', 'divorce'])->nullable();
-            $table->string('address')->nullable();
-            $table->string('city')->nullable();
-            $table->string('state')->nullable();
-            $table->string('country')->nullable(); 
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('users')) {
+            Schema::create('users', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('email')->unique();
+                $table->string('password');
+                $table->enum('role', ['admin','blogUser'])->default('blogUser');
+                $table->string('image')->nullable();
+                $table->integer('age')->nullable();
+                $table->enum('sex', ['male','female','other'])->nullable();  
+                $table->string('phone_number')->nullable();
+                $table->enum('status', ['married','single', 'divorce'])->nullable();
+                $table->string('address')->nullable();
+                $table->string('city')->nullable();
+                $table->string('state')->nullable();
+                $table->string('country')->nullable(); 
+                $table->timestamps();
+            });
+        }
     }
 
     /**
