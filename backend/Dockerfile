@@ -23,33 +23,17 @@ RUN composer install --no-dev --optimize-autoloader
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www
 
-# Create entrypoint script
-RUN echo '#!/bin/bash\n\
-set -e\n\
-\n\
-echo "Current ENV:"\n\
-env\n\
-\n\
-# Wait for database to be ready\n\
-echo "Waiting for database connection..."\n\
-until php artisan db:show > /dev/null 2>&1; do\n\
-    echo "Database is unavailable - sleeping"\n\
-    sleep 2\n\
-done\n\
-\n\
-echo "Running migrations..."\n\
-php artisan migrate:rollback --force\n\
-\n\
-php artisan config:cache\n\
-php artisan route:cache\n\
-php artisan view:cache\n\
-\n\
-php artisan serve --host 0.0.0.0 --port 8000\n\
-' > /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
+# Copy the deployment entrypoint script
+COPY deploy-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
+# Create .env file if it doesn't exist
+RUN if [ ! -f .env ]; then \
+    cp .env.example .env || echo "No .env.example file found"; \
+    fi
 
-# Expose port
-EXPOSE 8000
+# Expose port (will be overridden by PORT env var)
+EXPOSE 10000
 
 # Use the entrypoint script
 ENTRYPOINT ["docker-entrypoint.sh"]
