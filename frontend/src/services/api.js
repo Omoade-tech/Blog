@@ -1,9 +1,8 @@
 import axios from 'axios';
 
 // Get API URL from environment variables or use default
-const API_URL = import.meta.env.VITE_API_URL || 'https://blog-46qn.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL;
 const cleanApiUrl = API_URL.replace(/\/$/, '');
-console.log('API Service initializing with URL:', cleanApiUrl);
 
 // Axios instance
 export const apiClient = axios.create({
