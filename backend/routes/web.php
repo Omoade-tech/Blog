@@ -12,12 +12,36 @@ Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'message' => 'API is running']);
 });
 
-// Default route to serve the welcome view
+// Default route to return API info
 Route::get('/', function () {
-    return view('welcome');
+    return response()->json([
+        'name' => 'Blog API',
+        'version' => '1.0',
+        'status' => 'running',
+        'documentation' => 'https://blog-46qn.onrender.com/api/documentation',
+        'endpoints' => [
+            'auth' => [
+                'POST /api/login',
+                'POST /api/register',
+                'POST /api/logout'
+            ],
+            'blogs' => [
+                'GET /api/blogs',
+                'GET /api/blogs/{id}',
+                'GET /api/blogs/search'
+            ],
+            'profile' => [
+                'GET /api/profile',
+                'POST /api/profile/update'
+            ]
+        ]
+    ]);
 });
 
-// Fallback route for SPA
+// Fallback route for API
 Route::fallback(function () {
-    return view('welcome');
+    return response()->json([
+        'error' => 'Not Found',
+        'message' => 'The requested API endpoint does not exist.'
+    ], 404);
 });
