@@ -54,10 +54,9 @@ return new class extends Migration
             Schema::create('blogs', function (Blueprint $table) {
                 $table->id();
                 $table->string('title');
+                $table->string('authorName')->nullable();
                 $table->text('content');
                 $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-                $table->string('image')->nullable();
-                $table->string('category')->nullable();
                 $table->timestamps();
             });
         }
