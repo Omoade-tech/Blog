@@ -1,8 +1,10 @@
 import axios from 'axios';
 
 // Get API URL from environment variables or use default
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const cleanApiUrl = API_URL.replace(/\/$/, '');
+
+console.log('API URL:', cleanApiUrl);
 
 // Axios instance
 export const apiClient = axios.create({
@@ -13,7 +15,7 @@ export const apiClient = axios.create({
         'X-Requested-With': 'XMLHttpRequest'
     },
     withCredentials: true,
-    timeout: 30000,
+    timeout: 30000, // 30 seconds timeout
     retry: 3,
     retryDelay: 1000
 });
@@ -68,7 +70,7 @@ async function getCsrfToken() {
     // Create a new promise for fetching the token
     csrfTokenPromise = (async () => {
         try {
-            console.log('Fetching CSRF token...');
+            console.log('Fetching CSRF token from:', cleanApiUrl);
             
             // Try the Sanctum endpoint first (most common for Laravel)
             const response = await apiClient.get('/sanctum/csrf-cookie', {
@@ -103,7 +105,7 @@ async function getCsrfToken() {
         } catch (error) {
             console.error('Failed to fetch CSRF token:', error.message);
             if (error.code === 'ECONNABORTED') {
-                console.error('CSRF token request timed out. Please check your backend server connection.');
+                console.error('CSRF token request timed out. Please check if your backend server is running at:', cleanApiUrl);
             }
             return false;
         } finally {
