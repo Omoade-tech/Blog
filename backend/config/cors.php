@@ -24,7 +24,7 @@ return [
         'register',
         'health'
     ],
-    'allowed_methods' => ['*'],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     'allowed_origins' => [
         'https://blog-post-aorf.onrender.com',
         'https://blog-post-frontend.onrender.com',
@@ -43,13 +43,21 @@ return [
         'X-XSRF-TOKEN',
         'Accept',
         'Origin',
-        'X-CSRF-TOKEN'
+        'X-CSRF-TOKEN',
+        'Access-Control-Allow-Origin',
+        'Access-Control-Allow-Methods',
+        'Access-Control-Allow-Headers',
+        'Access-Control-Allow-Credentials'
     ],
     'exposed_headers' => [
         'Authorization',
-        'X-XSRF-TOKEN'
+        'X-XSRF-TOKEN',
+        'Access-Control-Allow-Origin',
+        'Access-Control-Allow-Methods',
+        'Access-Control-Allow-Headers',
+        'Access-Control-Allow-Credentials'
     ],
-    'max_age' => 0,
+    'max_age' => 86400,
     'supports_credentials' => true,
 
 ];
