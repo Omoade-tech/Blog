@@ -46,27 +46,57 @@ export const useAuthStore = defineStore('auth', {
 
     async login(credentials) {
       try {
-        const response = await api.login(credentials)
-        const userData = response.data.user || response.data.data
-        const token = response.data.token || response.data.access_token
-
+        const response = await api.login(credentials);
+        const responseData = response.data;
+        
+        // More flexible token extraction
+        let token = null;
+        if (responseData.token) {
+          token = responseData.token;
+        } else if (responseData.access_token) {
+          token = responseData.access_token;
+        } else if (responseData.data && responseData.data.token) {
+          token = responseData.data.token;
+        }
+        
+        // More flexible user extraction
+        let userData = null;
+        if (responseData.user) {
+          userData = responseData.user;
+        } else if (responseData.data && typeof responseData.data === 'object') {
+          // Check if data is likely the user object (has id or email)
+          if (responseData.data.id || responseData.data.email) {
+            userData = responseData.data;
+          }
+        }
+        
+        console.log('Auth store extracted token:', token ? 'Found' : 'Not found');
+        console.log('Auth store extracted user:', userData ? 'Found' : 'Not found');
+    
         if (!token) {
-          throw new Error('No token received from server')
+          throw new Error('No token received from server');
         }
-
-        localStorage.setItem('token', token)
+    
+        localStorage.setItem('token', token);
         if (userData) {
-          localStorage.setItem('user', JSON.stringify(userData))
+          localStorage.setItem('user', JSON.stringify(userData));
         }
-
-        this.user = userData
-        this.token = token
-        this.isAuthenticated = true
-
-        return response.data
+    
+        this.user = userData;
+        this.token = token;
+        this.isAuthenticated = true;
+        
+        console.log('Auth status after login:', { 
+          isAuthenticated: this.isAuthenticated,
+          hasToken: !!this.token,
+          hasUser: !!this.user
+        });
+    
+        return responseData;
       } catch (error) {
-        this.logout()
-        throw error
+        console.error('Login error in auth store:', error);
+        this.logout();
+        throw error;
       }
     },
 

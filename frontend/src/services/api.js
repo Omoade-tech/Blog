@@ -28,18 +28,40 @@ function getCookieValue(name) {
 async function getCsrfToken() {
     try {
         console.log('Fetching CSRF token...');
+        
+        // First, try to get the token from the /csrf endpoint
+        const csrfResponse = await apiClient.get('/csrf');
+        if (csrfResponse.data && csrfResponse.data.token) {
+            console.log('CSRF token received from /csrf endpoint');
+            apiClient.defaults.headers['X-XSRF-TOKEN'] = csrfResponse.data.token;
+            return true;
+        }
+        
+        // If that fails, try the Sanctum endpoint
         const response = await apiClient.get('/sanctum/csrf-cookie', {
             withCredentials: true,
             timeout: 5000
         });
-
+        
+        console.log('Sanctum CSRF response:', response);
+        
+        // Check for XSRF-TOKEN in cookies
         const token = getCookieValue('XSRF-TOKEN');
         if (token) {
-            apiClient.defaults.headers['X-XSRF-TOKEN'] = token;
+            console.log('XSRF-TOKEN found in cookies:', token);
+            apiClient.defaults.headers['X-XSRF-TOKEN'] = decodeURIComponent(token);
+            return true;
+        }
+        
+        // Check for XSRF-TOKEN in response headers
+        const xsrfToken = response.headers['x-xsrf-token'];
+        if (xsrfToken) {
+            console.log('XSRF-TOKEN found in response headers:', xsrfToken);
+            apiClient.defaults.headers['X-XSRF-TOKEN'] = xsrfToken;
             return true;
         }
 
-        console.warn('CSRF token not found in cookies.');
+        console.warn('CSRF token not found in cookies or headers.');
         return false;
     } catch (error) {
         console.error('Failed to fetch CSRF token:', error.message);
@@ -104,43 +126,72 @@ function ensureToken() {
 
 export default {
     // Auth: Login
-    async login(credentials) {
-        try {
-            const response = await apiClient.post('/api/login', credentials);
-            const token = response.data.token || response.data.access_token;
-            const user = response.data.user || response.data.data;
-
-            if (!token) throw new Error('No token provided by server');
-
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
-            apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-            return { data: response.data };
-        } catch (error) {
-            console.error('Login failed:', error.response?.data || error.message);
-            throw error;
+    // Auth: Login
+async login(credentials) {
+    try {
+        // Ensure we have a CSRF token before login
+        await getCsrfToken();
+        
+        console.log('Attempting login with credentials:', { email: credentials.email });
+        
+        const response = await apiClient.post('/api/login', credentials);
+        console.log('Login response:', response.data);
+        
+        // More flexible token and user extraction
+        let token = null;
+        if (response.data.token) {
+            token = response.data.token;
+        } else if (response.data.access_token) {
+            token = response.data.access_token;
+        } else if (response.data.data && response.data.data.token) {
+            token = response.data.data.token;
         }
-    },
+        
+        // More flexible user extraction
+        let user = null;
+        if (response.data.user) {
+            user = response.data.user;
+        } else if (response.data.data && typeof response.data.data === 'object') {
+            // If the user object is directly in the data field
+            if (response.data.data.email || response.data.data.id) {
+                user = response.data.data;
+            }
+        }
+
+        if (!token) {
+            console.error('No token in login response:', response.data);
+            throw new Error('No token provided by server');
+        }
+
+        console.log('Token extracted:', token ? 'Found' : 'Not found');
+        console.log('User extracted:', user ? 'Found' : 'Not found');
+
+        localStorage.setItem('token', token);
+        if (user) {
+            localStorage.setItem('user', JSON.stringify(user));
+        }
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+        return { data: response.data };
+    } catch (error) {
+        console.error('Login failed:', error.response?.data || error.message);
+        console.error('Full error:', error);
+        throw error;
+    }
+},
 
     // Auth: Register (no token required)
     async register(data) {
         try {
-            const formData = data instanceof FormData ? data : new FormData();
-
-            if (!(data instanceof FormData)) {
-                Object.entries(data).forEach(([key, value]) => {
-                    if (value !== null && value !== undefined) {
-                        formData.append(key, value);
-                    }
-                });
-            }
-
-            console.log('Sending registration data:', Object.fromEntries(formData.entries()));
-
-            return await apiClient.post('/api/register', formData, {
+            // Ensure we have a CSRF token before registration
+            await getCsrfToken();
+            
+            console.log('Sending registration data:', data);
+            
+            return await apiClient.post('/api/register', data, {
                 headers: {
-                    'Content-Type': 'multipart/form-data'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 }
             });
         } catch (error) {

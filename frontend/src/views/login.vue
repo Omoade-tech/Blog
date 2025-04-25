@@ -65,33 +65,57 @@ export default {
     },
 
     async handleLogin() {
-      try {
-        this.isLoading = true;
-        
-        // Use the authStore from setup()
-        const response = await this.authStore.login({ 
-          email: this.email, 
-          password: this.password 
-        });
-        
-        this.toast.success('Login successfully', {
-          timeout: 3000,
-        });
-        
-        if (response && response.user && response.user.role === 'admin') {
-          this.$router.push('/admindashboard');
-        } else {
-          this.$router.push('/dashboard');
-        }
-      } catch (error) {
-        console.error('Login error:', error);
-        this.toast.error(error.response?.data?.message || 'Login failed. Please check your credentials.', {
-          timeout: 5000,
-        });
-      } finally {
-        this.isLoading = false;
+  try {
+    this.isLoading = true;
+    
+    // Log the credentials being sent (email only for security)
+    console.log('Attempting login with:', this.email);
+    
+    const response = await this.authStore.login({ 
+      email: this.email, 
+      password: this.password 
+    });
+    
+    console.log('Login successful, response:', response);
+    
+    // Check if the user object is in the auth store
+    const user = this.authStore.currentUser;
+    console.log('Current user after login:', user);
+    
+    this.toast.success('Login successful!', {
+      timeout: 3000,
+    });
+    
+    // Redirect based on user role - use the store's user data
+    if (user && user.role === 'admin') {
+      this.$router.push('/admindashboard');
+    } else {
+      this.$router.push('/dashboard');
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    
+    let errorMessage = 'Login failed. Please check your credentials.';
+    
+    if (error.response && error.response.data) {
+      console.error('Error response data:', error.response.data);
+      
+      if (error.response.data.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response.data.errors) {
+        const errors = error.response.data.errors;
+        const firstError = Object.values(errors)[0];
+        errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
       }
-    },
+    }
+    
+    this.toast.error(errorMessage, {
+      timeout: 5000,
+    });
+  } finally {
+    this.isLoading = false;
+  }
+},
   },
 };
 </script>
