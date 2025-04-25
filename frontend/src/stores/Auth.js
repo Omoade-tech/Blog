@@ -49,6 +49,8 @@ export const useAuthStore = defineStore('auth', {
         const response = await api.login(credentials);
         const responseData = response.data;
         
+        console.log('Login response data:', responseData);
+        
         // More flexible token extraction
         let token = null;
         if (responseData.token) {
@@ -74,6 +76,7 @@ export const useAuthStore = defineStore('auth', {
         console.log('Auth store extracted user:', userData ? 'Found' : 'Not found');
     
         if (!token) {
+          console.error('No token found in response:', responseData);
           throw new Error('No token received from server');
         }
     
