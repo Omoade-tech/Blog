@@ -137,45 +137,43 @@ export default {
       this.isLoading = true;
 
       try {
-        const formData = new FormData();
-        formData.append('name', this.name);
-        formData.append('email', this.email);
-        formData.append('password', this.password);
-        formData.append('password_confirmation', this.confirmPassword); 
-        formData.append('role', this.role);
+        // Create a plain object instead of FormData
+        const registerData = {
+          name: this.name,
+          email: this.email,
+          password: this.password,
+          role: this.role
+        };
         
         const authStore = useAuthStore();
-        await authStore.register(formData);
+        await authStore.register(registerData);
 
-
-        this.toast.success('You have successfully registered for this Cruiz-blog.' ,{
+        this.toast.success('Registration successful! Please login.', {
           timeout: 3000,
-          // position: 'center',
         });
-        // Success - redirect to login
-        this.$router.push({
-          path: '/login',
-          query: { registered: 'success' } 
-        });
-      } catch (error) {
-        // Extract the most helpful error message
-        let errorMsg = 'Registration failed';
         
-        if (error.response?.data?.message) {
-          errorMsg = error.response.data.message;
-        } else if (error.response?.data?.errors)
-         {
+        // Redirect to login page
+        this.$router.push('/login');
+      } catch (error) {
+        console.error('Registration error:', error);
+        
+        // Handle different types of errors
+        if (error.response?.data?.errors) {
           // Laravel validation errors
           const errors = error.response.data.errors;
           const firstError = Object.values(errors)[0];
-          if (Array.isArray(firstError) && firstError.length > 0) {
-            errorMsg = firstError[0];
-          }
-        } else if (error.message) {
-          errorMsg = error.message;
+          this.errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
+        } else if (error.response?.data?.message) {
+          // Server error message
+          this.errorMessage = error.response.data.message;
+        } else {
+          // Generic error
+          this.errorMessage = 'Registration failed. Please try again.';
         }
         
-        this.errorMessage = errorMsg;
+        this.toast.error(this.errorMessage, {
+          timeout: 5000,
+        });
       } finally {
         this.isLoading = false;
       }
