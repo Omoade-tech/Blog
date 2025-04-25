@@ -1,6 +1,11 @@
 <?php
 
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\BlogController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 // Add a route to serve CSRF token for SPA
 Route::get('/csrf', function () {
@@ -9,7 +14,20 @@ Route::get('/csrf', function () {
 
 // Health check endpoint
 Route::get('/health', function () {
-    return response()->json(['status' => 'ok', 'message' => 'API is running']);
+    try {
+        DB::connection()->getPdo();
+        return response()->json([
+            'status' => 'ok',
+            'database' => 'connected',
+            'message' => 'Database connection successful'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'database' => 'disconnected',
+            'message' => $e->getMessage()
+        ], 500);
+    }
 });
 
 // Default route to return API info
@@ -28,15 +46,25 @@ Route::get('/', function () {
             'blogs' => [
                 'GET /api/blogs',
                 'GET /api/blogs/{id}',
-                'GET /api/blogs/search'
+                'GET /api/my-blogs',
+                'GET /api/blogs/search',
+                'POST /api/blogs', // Protected route
+                'PUT /api/blogs/{id}', // Protected route
+                'DELETE /api/blogs/{id}' // Protected route
             ],
             'profile' => [
-                'GET /api/profile',
-                'POST /api/profile/update'
+                'GET /api/profile', // Protected route
+                'POST /api/profile/update' // Protected route
+            ],
+            'user' => [
+                'GET /api/user', // Protected route
+                
             ]
         ]
     ]);
 });
+
+
 
 // Fallback route for API
 Route::fallback(function () {
