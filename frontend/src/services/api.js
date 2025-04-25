@@ -126,59 +126,65 @@ function ensureToken() {
 
 export default {
     // Auth: Login
-    // Auth: Login
-async login(credentials) {
-    try {
-        // Ensure we have a CSRF token before login
-        await getCsrfToken();
-        
-        console.log('Attempting login with credentials:', { email: credentials.email });
-        
-        const response = await apiClient.post('/api/login', credentials);
-        console.log('Login response:', response.data);
-        
-        // More flexible token and user extraction
-        let token = null;
-        if (response.data.token) {
-            token = response.data.token;
-        } else if (response.data.access_token) {
-            token = response.data.access_token;
-        } else if (response.data.data && response.data.data.token) {
-            token = response.data.data.token;
-        }
-        
-        // More flexible user extraction
-        let user = null;
-        if (response.data.user) {
-            user = response.data.user;
-        } else if (response.data.data && typeof response.data.data === 'object') {
-            // If the user object is directly in the data field
-            if (response.data.data.email || response.data.data.id) {
-                user = response.data.data;
+    async login(credentials) {
+        try {
+            // Ensure we have a CSRF token before login
+            await getCsrfToken();
+            
+            console.log('Attempting login with credentials:', { email: credentials.email });
+            
+            const response = await apiClient.post('/api/login', credentials, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            console.log('Login response:', response.data);
+            
+            // More flexible token and user extraction
+            let token = null;
+            if (response.data.token) {
+                token = response.data.token;
+            } else if (response.data.access_token) {
+                token = response.data.access_token;
+            } else if (response.data.data && response.data.data.token) {
+                token = response.data.data.token;
             }
+            
+            // More flexible user extraction
+            let user = null;
+            if (response.data.user) {
+                user = response.data.user;
+            } else if (response.data.data && typeof response.data.data === 'object') {
+                // If the user object is directly in the data field
+                if (response.data.data.email || response.data.data.id) {
+                    user = response.data.data;
+                }
+            }
+
+            if (!token) {
+                console.error('No token in login response:', response.data);
+                throw new Error('No token provided by server');
+            }
+
+            console.log('Token extracted:', token ? 'Found' : 'Not found');
+            console.log('User extracted:', user ? 'Found' : 'Not found');
+
+            // Set the token in localStorage and axios headers
+            localStorage.setItem('token', token);
+            if (user) {
+                localStorage.setItem('user', JSON.stringify(user));
+            }
+            apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+            return { data: { ...response.data, token, user } };
+        } catch (error) {
+            console.error('Login failed:', error.response?.data || error.message);
+            console.error('Full error:', error);
+            throw error;
         }
-
-        if (!token) {
-            console.error('No token in login response:', response.data);
-            throw new Error('No token provided by server');
-        }
-
-        console.log('Token extracted:', token ? 'Found' : 'Not found');
-        console.log('User extracted:', user ? 'Found' : 'Not found');
-
-        localStorage.setItem('token', token);
-        if (user) {
-            localStorage.setItem('user', JSON.stringify(user));
-        }
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-        return { data: response.data };
-    } catch (error) {
-        console.error('Login failed:', error.response?.data || error.message);
-        console.error('Full error:', error);
-        throw error;
-    }
-},
+    },
 
     // Auth: Register (no token required)
     async register(data) {
