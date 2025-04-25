@@ -46,6 +46,7 @@ Route::get('/', function () {
             'blogs' => [
                 'GET /api/blogs',
                 'GET /api/blogs/{id}',
+                'GET /api/my-blogs',
                 'GET /api/blogs/search',
                 'POST /api/blogs', // Protected route
                 'PUT /api/blogs/{id}', // Protected route
