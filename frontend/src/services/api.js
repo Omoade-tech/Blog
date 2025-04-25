@@ -13,7 +13,9 @@ export const apiClient = axios.create({
         'X-Requested-With': 'XMLHttpRequest'
     },
     withCredentials: true,
-    timeout: 10000
+    timeout: 30000,
+    retry: 3,
+    retryDelay: 1000
 });
 
 // Get cookie value (used for XSRF token)
@@ -23,6 +25,31 @@ function getCookieValue(name) {
     if (parts.length === 2) return parts.pop().split(';').shift();
     return null;
 }
+
+// Add retry interceptor
+apiClient.interceptors.response.use(null, async (error) => {
+    const { config } = error;
+    if (!config || !config.retry) {
+        return Promise.reject(error);
+    }
+    
+    config.retryCount = config.retryCount || 0;
+    
+    if (config.retryCount >= config.retry) {
+        return Promise.reject(error);
+    }
+    
+    config.retryCount += 1;
+    
+    const backoff = new Promise(resolve => {
+        setTimeout(() => {
+            resolve();
+        }, config.retryDelay || 1000);
+    });
+    
+    await backoff;
+    return apiClient(config);
+});
 
 // Fetch CSRF token
 let csrfTokenPromise = null;
@@ -46,7 +73,8 @@ async function getCsrfToken() {
             // Try the Sanctum endpoint first (most common for Laravel)
             const response = await apiClient.get('/sanctum/csrf-cookie', {
                 withCredentials: true,
-                timeout: 5000
+                timeout: 15000,
+                retry: 2
             });
             
             console.log('Sanctum CSRF response:', response);
@@ -60,7 +88,10 @@ async function getCsrfToken() {
             }
             
             // If Sanctum fails, try the /csrf endpoint
-            const csrfResponse = await apiClient.get('/csrf');
+            const csrfResponse = await apiClient.get('/csrf', {
+                timeout: 15000,
+                retry: 2
+            });
             if (csrfResponse.data && csrfResponse.data.token) {
                 console.log('CSRF token received from /csrf endpoint');
                 apiClient.defaults.headers['X-XSRF-TOKEN'] = csrfResponse.data.token;
@@ -71,6 +102,9 @@ async function getCsrfToken() {
             return false;
         } catch (error) {
             console.error('Failed to fetch CSRF token:', error.message);
+            if (error.code === 'ECONNABORTED') {
+                console.error('CSRF token request timed out. Please check your backend server connection.');
+            }
             return false;
         } finally {
             // Clear the promise so we can try again if needed
@@ -144,15 +178,21 @@ export default {
     async login(credentials) {
         try {
             // Ensure we have a CSRF token before login
-            await getCsrfToken();
+            const csrfResult = await getCsrfToken();
+            if (!csrfResult) {
+                throw new Error('Failed to obtain CSRF token. Please check your backend server connection.');
+            }
             
             console.log('Attempting login with credentials:', { email: credentials.email });
             
             const response = await apiClient.post('/api/login', credentials, {
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
+                    'Accept': 'application/json',
+                    'X-XSRF-TOKEN': apiClient.defaults.headers['X-XSRF-TOKEN']
+                },
+                timeout: 30000,
+                retry: 2
             });
             
             console.log('Login response:', response.data);
