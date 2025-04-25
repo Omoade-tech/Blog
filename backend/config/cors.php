@@ -15,21 +15,41 @@ return [
     |
     */
 
-   'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'register'], 
-    'allowed_methods' => ['*'], 
+   'paths' => [
+        'api/*',
+        'sanctum/csrf-cookie',
+        'csrf',
+        'login',
+        'logout',
+        'register',
+        'health'
+    ],
+    'allowed_methods' => ['*'],
     'allowed_origins' => [
         'https://blog-post-aorf.onrender.com',
-        'https://blog-post-frontend.onrender.com', 
+        'https://blog-post-frontend.onrender.com',
         'https://blog-46qn.onrender.com',
         'http://localhost:3000',
-        'http://localhost:5173'
-    ], 
+        'http://localhost:5173',
+        'http://localhost:8000'
+    ],
     'allowed_origins_patterns' => [
         '#^https://.*\.onrender\.com$#'
     ],
-    'allowed_headers' => ['*'], 
-    'exposed_headers' => [],
+    'allowed_headers' => [
+        'Content-Type',
+        'X-Requested-With',
+        'Authorization',
+        'X-XSRF-TOKEN',
+        'Accept',
+        'Origin',
+        'X-CSRF-TOKEN'
+    ],
+    'exposed_headers' => [
+        'Authorization',
+        'X-XSRF-TOKEN'
+    ],
     'max_age' => 0,
-    'supports_credentials' => true, 
+    'supports_credentials' => true,
 
 ];

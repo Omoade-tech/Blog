@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Blog;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class BlogController extends Controller
 {
@@ -106,6 +107,8 @@ class BlogController extends Controller
     public function store(Request $request)
     {
         try {
+            \Log::info('Blog creation request received:', $request->all());
+            
             $validatedData = $request->validate([
                 'title' => 'required|string|max:255',
                 'content' => 'required|string',
@@ -113,9 +116,19 @@ class BlogController extends Controller
             ]);
 
             $user = Auth::user();
+            if (!$user) {
+                \Log::error('No authenticated user found');
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+
             $validatedData['user_id'] = $user->id;
+            \Log::info('Creating blog with data:', $validatedData);
 
             $blog = Blog::create($validatedData);
+            \Log::info('Blog created successfully:', ['blog_id' => $blog->id]);
 
             return response()->json([
                 'status' => 'success',
@@ -123,12 +136,17 @@ class BlogController extends Controller
                 'data' => $blog->load('user')
             ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed:', ['errors' => $e->errors()]);
             return response()->json([
                 'status' => 'error',
                 'message' => 'Validation failed',
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+            \Log::error('Error creating blog post:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'status' => 'error',
                 'message' => 'Error creating blog post',
