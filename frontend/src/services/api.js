@@ -25,56 +25,71 @@ function getCookieValue(name) {
 }
 
 // Fetch CSRF token
-async function getCsrfToken() {
-    try {
-        console.log('Fetching CSRF token...');
-        
-        // First, try to get the token from the /csrf endpoint
-        const csrfResponse = await apiClient.get('/csrf');
-        if (csrfResponse.data && csrfResponse.data.token) {
-            console.log('CSRF token received from /csrf endpoint');
-            apiClient.defaults.headers['X-XSRF-TOKEN'] = csrfResponse.data.token;
-            return true;
-        }
-        
-        // If that fails, try the Sanctum endpoint
-        const response = await apiClient.get('/sanctum/csrf-cookie', {
-            withCredentials: true,
-            timeout: 5000
-        });
-        
-        console.log('Sanctum CSRF response:', response);
-        
-        // Check for XSRF-TOKEN in cookies
-        const token = getCookieValue('XSRF-TOKEN');
-        if (token) {
-            console.log('XSRF-TOKEN found in cookies:', token);
-            apiClient.defaults.headers['X-XSRF-TOKEN'] = decodeURIComponent(token);
-            return true;
-        }
-        
-        // Check for XSRF-TOKEN in response headers
-        const xsrfToken = response.headers['x-xsrf-token'];
-        if (xsrfToken) {
-            console.log('XSRF-TOKEN found in response headers:', xsrfToken);
-            apiClient.defaults.headers['X-XSRF-TOKEN'] = xsrfToken;
-            return true;
-        }
+let csrfTokenPromise = null;
 
-        console.warn('CSRF token not found in cookies or headers.');
-        return false;
-    } catch (error) {
-        console.error('Failed to fetch CSRF token:', error.message);
-        return false;
+async function getCsrfToken() {
+    // If we already have a token in the headers, return true
+    if (apiClient.defaults.headers['X-XSRF-TOKEN']) {
+        return true;
     }
+
+    // If we're already fetching a token, return the existing promise
+    if (csrfTokenPromise) {
+        return csrfTokenPromise;
+    }
+
+    // Create a new promise for fetching the token
+    csrfTokenPromise = (async () => {
+        try {
+            console.log('Fetching CSRF token...');
+            
+            // Try the Sanctum endpoint first (most common for Laravel)
+            const response = await apiClient.get('/sanctum/csrf-cookie', {
+                withCredentials: true,
+                timeout: 5000
+            });
+            
+            console.log('Sanctum CSRF response:', response);
+            
+            // Check for XSRF-TOKEN in cookies
+            const token = getCookieValue('XSRF-TOKEN');
+            if (token) {
+                console.log('XSRF-TOKEN found in cookies:', token);
+                apiClient.defaults.headers['X-XSRF-TOKEN'] = decodeURIComponent(token);
+                return true;
+            }
+            
+            // If Sanctum fails, try the /csrf endpoint
+            const csrfResponse = await apiClient.get('/csrf');
+            if (csrfResponse.data && csrfResponse.data.token) {
+                console.log('CSRF token received from /csrf endpoint');
+                apiClient.defaults.headers['X-XSRF-TOKEN'] = csrfResponse.data.token;
+                return true;
+            }
+
+            console.warn('CSRF token not found in cookies or headers.');
+            return false;
+        } catch (error) {
+            console.error('Failed to fetch CSRF token:', error.message);
+            return false;
+        } finally {
+            // Clear the promise so we can try again if needed
+            csrfTokenPromise = null;
+        }
+    })();
+
+    return csrfTokenPromise;
 }
 
 // Request Interceptor
 apiClient.interceptors.request.use(
     async (config) => {
-        const skipCsrfFor = ['/api/login', '/api/register'];
+        const skipCsrfFor = ['/sanctum/csrf-cookie', '/csrf', '/api/login', '/api/register'];
         const shouldSkip = skipCsrfFor.some(url => config.url.includes(url));
-        if (!shouldSkip) await getCsrfToken();
+        
+        if (!shouldSkip && !apiClient.defaults.headers['X-XSRF-TOKEN']) {
+            await getCsrfToken();
+        }
 
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         if (token) config.headers.Authorization = `Bearer ${token}`;
