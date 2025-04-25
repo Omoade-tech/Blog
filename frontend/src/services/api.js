@@ -310,7 +310,7 @@ export default {
 
         Object.entries(profileData).forEach(([key, value]) => {
             if (value !== null && value !== undefined) {
-                formData.append(key, value instanceof File ? key : key, value);
+                formData.append(key, value);
             }
         });
 
