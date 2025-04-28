@@ -166,13 +166,18 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async updateProfile(profileData) {
+    async updateProfile(formData) {
       try {
         if (!this.isAuthenticated) {
           throw new Error('Not authenticated')
         }
 
-        const response = await api.updateUserProfile(profileData)
+        // Ensure formData is actually FormData
+        if (!(formData instanceof FormData)) {
+          throw new Error('Invalid form data format')
+        }
+
+        const response = await api.updateUserProfile(formData)
         let userData
 
         if (response.data.status === 'success' && response.data.data) {
@@ -181,11 +186,17 @@ export const useAuthStore = defineStore('auth', {
           userData = response.data.user || response.data
         }
 
+        // Ensure we have a profile image URL
+        if (!userData.profile_image) {
+          userData.profile_image = '/images/default-profile.png'
+        }
+
         localStorage.setItem('user', JSON.stringify(userData))
         this.user = userData
 
         return userData
       } catch (error) {
+        console.error('Profile update error:', error)
         throw error
       }
     },

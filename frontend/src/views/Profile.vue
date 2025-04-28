@@ -30,8 +30,8 @@
           <div class="card-body" v-else-if="user">
             <div class="row">
               <!-- User image -->
-              <div class="col-md-4" v-if="user.image">
-                <img :src="user.image" alt="User Image" class="img-fluid">
+              <div class="col-md-4" v-if="user.profile_image">
+                <img :src="user.profile_image" alt="User Image" class="img-fluid">
               </div>
               <div class="col-md-8">
                 <h5>Name: {{ user.name }}</h5>
@@ -175,21 +175,21 @@ export default {
       loading: true,
       error: null,
       isAuthError: false,
+      updating: false,
+      updateError: null,
       profileForm: {
         name: '',
         email: '',
         phoneNumber: '',
-        age: null,
+        age: '',
         sex: '',
         status: '',
         address: '',
         city: '',
         state: '',
         country: '',
-        image: null
-      },
-      updating: false,
-      updateError: null
+        profile_image: null
+      }
     };
   },
   created() {
@@ -197,8 +197,8 @@ export default {
   },
   setup() {
     const router = useRouter();
-  const toast = useToast();
-  return { router, toast };
+    const toast = useToast();
+    return { router, toast };
   },
   methods: {
     async fetchUserProfile() {
@@ -247,35 +247,35 @@ export default {
         name: this.user.name || '',
         email: this.user.email || '',
         phoneNumber: this.user.phoneNumber || '',
-        age: this.user.age || null,
+        age: this.user.age || '',
         sex: this.user.sex || '',
         status: this.user.status || '',
         address: this.user.address || '',
         city: this.user.city || '',
         state: this.user.state || '',
         country: this.user.country || '',
-        image: null 
+        profile_image: null 
       };
     },
     
     handleImageUpload(event) {
       const file = event.target.files[0];
       if (file) {
-        // Check file size (2MB max)
+        // Validate file size (2MB limit)
         if (file.size > 2 * 1024 * 1024) {
-          this.updateError = 'Image size exceeds 2MB limit';
-          event.target.value = ''; // Clear the file input
+          this.updateError = 'Image size should not exceed 2MB';
+          event.target.value = ''; // Clear the input
           return;
         }
         
-        // Check file type
-        if (!['image/jpeg', 'image/png'].includes(file.type)) {
-          this.updateError = 'Only JPG and PNG formats are supported';
-          event.target.value = ''; // Clear the file input
+        // Validate file type
+        if (!file.type.match('image.*')) {
+          this.updateError = 'Please select an image file';
+          event.target.value = ''; // Clear the input
           return;
         }
         
-        this.profileForm.image = file;
+        this.profileForm.profile_image = file;
         this.updateError = null;
       }
     },
@@ -285,24 +285,31 @@ export default {
       this.updateError = null;
       
       try {
+        // Create a new FormData object
+        const formData = new FormData();
+        
+        // Append all form fields
+        Object.keys(this.profileForm).forEach(key => {
+          if (this.profileForm[key] !== null && this.profileForm[key] !== '') {
+            formData.append(key, this.profileForm[key]);
+          }
+        });
+        
         const authStore = useAuthStore();
-        await authStore.updateProfile(this.profileForm);
+        await authStore.updateProfile(formData);
 
-        this.toast.success('You have successfully Update your Profile for this Cruiz-blog.' ,{
+        this.toast.success('You have successfully updated your Profile for this Cruiz-blog.', {
           timeout: 3000,
-          
         });
         
         // Update local user data
-        this.user = authStore.user; 
+        this.user = authStore.user;
 
         // Close modal
         this.$refs.closeModalBtn.click();
-        
-
       } catch (error) {
         console.error('Profile update error:', error);
-        this.updateError = error.message || 'Failed to update profile';
+        this.updateError = error.response?.data?.message || 'Failed to update profile. Please try again.';
       } finally {
         this.updating = false;
       }
