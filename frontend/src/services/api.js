@@ -307,43 +307,40 @@ export default {
         return apiClient.get('/api/profile');
     },
 
-    updateUserProfile(profileData) {
+    updateUserProfile(formData) {
         ensureToken();
-        const formData = new FormData();
-
-        Object.entries(profileData).forEach(([key, value]) => {
-            if (value !== null && value !== undefined) {
-                // Handle File objects
-                if (value instanceof File) {
-                    formData.append(key, value);
-                }
-                // Handle arrays and objects by converting to JSON string
-                else if (typeof value === 'object') {
-                    formData.append(key, JSON.stringify(value));
-                }
-                // Handle profile image specifically
-                else if (key === 'profile_image' && !value) {
-                    formData.append(key, DEFAULT_PROFILE_IMAGE);
-                }
-                // Handle primitive values
-                else {
-                    formData.append(key, value.toString());
-                }
-            }
-        });
-
+        
+        // Debug log to see what we're receiving
+        console.log('Profile data received:', formData);
+        
+        // Ensure we have a FormData object
+        if (!(formData instanceof FormData)) {
+            console.error('Invalid form data format. Expected FormData, got:', typeof formData);
+            throw new Error('Invalid form data format. Expected FormData.');
+        }
+        
+        // Debug log to see what's in the FormData
+        for (let pair of formData.entries()) {
+            console.log('FormData entry:', pair[0], pair[1]);
+        }
+        
+        // Set the correct content type for multipart/form-data
         return apiClient.post('/api/profile/update', formData, {
             headers: {
-                'Content-Type': 'multipart/form-data'
+                'Content-Type': 'multipart/form-data',
+                'Accept': 'application/json'
             }
         }).then(response => {
             // Ensure the response includes a profile image
             if (response.data && response.data.user) {
                 if (!response.data.user.profile_image) {
-                    response.data.user.profile_image = DEFAULT_PROFILE_IMAGE;
+                    response.data.user.profile_image = '/images/default-profile.png';
                 }
             }
             return response;
+        }).catch(error => {
+            console.error('Profile update API error:', error);
+            throw error;
         });
     }
 };
