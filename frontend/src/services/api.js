@@ -6,6 +6,9 @@ const cleanApiUrl = API_URL.replace(/\/$/, '');
 
 console.log('API URL:', cleanApiUrl);
 
+// Add default image URL constant at the top of the file after imports
+const DEFAULT_PROFILE_IMAGE = '/images/default-profile.png';
+
 // Axios instance
 export const apiClient = axios.create({
     baseURL: cleanApiUrl,
@@ -310,7 +313,22 @@ export default {
 
         Object.entries(profileData).forEach(([key, value]) => {
             if (value !== null && value !== undefined) {
-                formData.append(key, value);
+                // Handle File objects
+                if (value instanceof File) {
+                    formData.append(key, value);
+                }
+                // Handle arrays and objects by converting to JSON string
+                else if (typeof value === 'object') {
+                    formData.append(key, JSON.stringify(value));
+                }
+                // Handle profile image specifically
+                else if (key === 'profile_image' && !value) {
+                    formData.append(key, DEFAULT_PROFILE_IMAGE);
+                }
+                // Handle primitive values
+                else {
+                    formData.append(key, value.toString());
+                }
             }
         });
 
@@ -318,6 +336,14 @@ export default {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
+        }).then(response => {
+            // Ensure the response includes a profile image
+            if (response.data && response.data.user) {
+                if (!response.data.user.profile_image) {
+                    response.data.user.profile_image = DEFAULT_PROFILE_IMAGE;
+                }
+            }
+            return response;
         });
     }
 };
